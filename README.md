@@ -154,7 +154,8 @@ Beyond intents, `me.json` includes identity and presentation fields:
 | `bio`      | `string` | No       | Short bio (max 500 chars).                           |
 | `avatar`   | `string` | No       | Profile picture URL.                                 |
 | `banner`   | `string` | No       | Header/banner image URL.                             |
-| `location` | `string` | No       | Freeform location (e.g., "Berlin" or "Remote").      |
+| `location` | `string` | No       | Public display location (e.g., "Berlin" or "Remote"). |
+| `locationData` | `object` | No | Approximate public place data for local discovery; stores town/city-level coordinates, precision, country code, and lookup source metadata. |
 | `links`    | `object` | No       | Social links (`website`, `github`, `twitter`, etc.). |
 | `buttons`  | `array`  | No       | Call-to-action buttons for human visitors. Add as many as you need. |
 | `pages`    | `array`  | No       | Custom content pages (markdown).                     |

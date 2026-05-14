@@ -2,7 +2,25 @@
   "version": "0.1",
   "name": "Example Name",
   "handle": "example",
-  "location": "City, Country",
+  "location": "Cork, County Cork, Ireland",
+  "locationData": {
+    "label": "Cork, County Cork, Ireland",
+    "latitude": 51.89797,
+    "longitude": -8.47061,
+    "precision": "city",
+    "locality": "Cork",
+    "region": "County Cork",
+    "country": "Ireland",
+    "countryCode": "IE",
+    "source": {
+      "provider": "photon",
+      "id": "N:123",
+      "osmType": "N",
+      "osmId": 123,
+      "osmKey": "place",
+      "osmValue": "city"
+    }
+  },
   "bio": "Short example bio describing what this person does.",
   "business": {
     "positioningStatement": "I help service-based founders with unclear offers by shaping a clearer offer that is easier to buy.",

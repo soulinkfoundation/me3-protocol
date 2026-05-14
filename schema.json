@@ -417,6 +417,102 @@
       },
       "type": "object"
     },
+    "Me3LocationData": {
+      "additionalProperties": false,
+      "properties": {
+        "country": {
+          "description": "Country name",
+          "type": "string"
+        },
+        "countryCode": {
+          "description": "ISO 3166-1 alpha-2 country code",
+          "type": "string"
+        },
+        "label": {
+          "description": "Human-readable public place label, usually town/city plus region/country",
+          "type": "string"
+        },
+        "latitude": {
+          "description": "Approximate latitude for local discovery; should be town/city-level, not an exact address",
+          "type": "number"
+        },
+        "locality": {
+          "description": "Town, city, locality, or nearest named place",
+          "type": "string"
+        },
+        "longitude": {
+          "description": "Approximate longitude for local discovery; should be town/city-level, not an exact address",
+          "type": "number"
+        },
+        "precision": {
+          "$ref": "#/definitions/Me3LocationPrecision",
+          "description": "Approximation level for the stored public location"
+        },
+        "region": {
+          "description": "Region, state, county, province, or equivalent",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/definitions/Me3LocationSource",
+          "description": "Optional lookup source metadata for refresh/dedupe"
+        }
+      },
+      "required": [
+        "label",
+        "latitude",
+        "longitude",
+        "precision"
+      ],
+      "type": "object"
+    },
+    "Me3LocationPrecision": {
+      "enum": [
+        "locality",
+        "city",
+        "district",
+        "county",
+        "region",
+        "country",
+        "unknown"
+      ],
+      "type": "string"
+    },
+    "Me3LocationSource": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "Provider-specific stable place identifier",
+          "type": "string"
+        },
+        "osmId": {
+          "description": "OpenStreetMap object id, when available",
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "osmKey": {
+          "description": "OpenStreetMap primary tag key, when available",
+          "type": "string"
+        },
+        "osmType": {
+          "description": "OpenStreetMap object type, when available",
+          "type": "string"
+        },
+        "osmValue": {
+          "description": "OpenStreetMap primary tag value, when available",
+          "type": "string"
+        },
+        "provider": {
+          "description": "Lookup provider or data source used to resolve this public location",
+          "type": "string"
+        }
+      },
+      "required": [
+        "provider"
+      ],
+      "type": "object"
+    },
     "Me3Media": {
       "additionalProperties": false,
       "properties": {
@@ -649,6 +745,10 @@
         "location": {
           "description": "Freeform location string (e.g. \"Remote\", \"Berlin, Germany\")",
           "type": "string"
+        },
+        "locationData": {
+          "$ref": "#/definitions/Me3LocationData",
+          "description": "Structured public location data for approximate local discovery"
         },
         "name": {
           "description": "Display name (required)",

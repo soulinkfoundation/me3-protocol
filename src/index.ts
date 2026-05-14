@@ -323,6 +323,51 @@ export interface Me3Intents {
   shop?: Me3IntentShop;
 }
 
+export type Me3LocationPrecision =
+  | "locality"
+  | "city"
+  | "district"
+  | "county"
+  | "region"
+  | "country"
+  | "unknown";
+
+export interface Me3LocationSource {
+  /** Lookup provider or data source used to resolve this public location */
+  provider: string;
+  /** Provider-specific stable place identifier */
+  id?: string;
+  /** OpenStreetMap object type, when available */
+  osmType?: string;
+  /** OpenStreetMap object id, when available */
+  osmId?: string | number;
+  /** OpenStreetMap primary tag key, when available */
+  osmKey?: string;
+  /** OpenStreetMap primary tag value, when available */
+  osmValue?: string;
+}
+
+export interface Me3LocationData {
+  /** Human-readable public place label, usually town/city plus region/country */
+  label: string;
+  /** Approximate latitude for local discovery; should be town/city-level, not an exact address */
+  latitude: number;
+  /** Approximate longitude for local discovery; should be town/city-level, not an exact address */
+  longitude: number;
+  /** Approximation level for the stored public location */
+  precision: Me3LocationPrecision;
+  /** Town, city, locality, or nearest named place */
+  locality?: string;
+  /** Region, state, county, province, or equivalent */
+  region?: string;
+  /** Country name */
+  country?: string;
+  /** ISO 3166-1 alpha-2 country code */
+  countryCode?: string;
+  /** Optional lookup source metadata for refresh/dedupe */
+  source?: Me3LocationSource;
+}
+
 export interface Me3Profile {
   /** Protocol version */
   version: string;
@@ -332,6 +377,8 @@ export interface Me3Profile {
   handle?: string;
   /** Freeform location string (e.g. "Remote", "Berlin, Germany") */
   location?: string;
+  /** Structured public location data for approximate local discovery */
+  locationData?: Me3LocationData;
   /** Short bio */
   bio?: string;
   /** Avatar URL (absolute or relative) */
@@ -398,6 +445,7 @@ const MAX_BIO_LENGTH = 500;
 const MAX_HANDLE_LENGTH = 30;
 const HANDLE_REGEX = /^[a-z0-9_-]+$/i;
 const MAX_LOCATION_LENGTH = 100;
+const MAX_LOCATION_SOURCE_LENGTH = 80;
 const MAX_BUTTON_TEXT_LENGTH = 30;
 const VALID_BUTTON_STYLES = ["primary", "secondary", "outline"];
 const URL_REGEX = /^https?:\/\/.+/i;
@@ -415,6 +463,15 @@ const VALID_FREQUENCIES = ["daily", "weekly", "monthly", "irregular"];
 const VALID_CURRENCIES = ["USD", "GBP", "EUR", "CAD", "AUD", "CHF", "SGD", "INR", "PKR"];
 const VALID_TESTIMONIAL_DISPLAYS = ["homepage", "standalone"];
 const VALID_ACTION_METHODS = ["GET", "POST"];
+const VALID_LOCATION_PRECISIONS: Me3LocationPrecision[] = [
+  "locality",
+  "city",
+  "district",
+  "county",
+  "region",
+  "country",
+  "unknown",
+];
 const VALID_SERVICE_AVAILABILITY_MODES = [
   "calendar",
   "native",
@@ -422,6 +479,176 @@ const VALID_SERVICE_AVAILABILITY_MODES = [
   "manual",
 ];
 const VALID_SERVICE_STATUSES = ["active", "paused", "draft"];
+
+function validateOptionalLocationText(
+  record: Record<string, unknown>,
+  key: string,
+  field: string,
+  errors: ValidationError[],
+  maxLength = MAX_LOCATION_LENGTH,
+): void {
+  const value = record[key];
+  if (value === undefined) return;
+
+  if (typeof value !== "string") {
+    errors.push({ field, message: `${field} must be a string` });
+  } else if (value.length > maxLength) {
+    errors.push({
+      field,
+      message: `${field} must be ${maxLength} characters or less`,
+    });
+  }
+}
+
+function validateCoordinate(
+  value: unknown,
+  field: string,
+  min: number,
+  max: number,
+  errors: ValidationError[],
+): void {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    errors.push({ field, message: `${field} must be a number` });
+  } else if (value < min || value > max) {
+    errors.push({ field, message: `${field} must be between ${min} and ${max}` });
+  }
+}
+
+function validateLocationData(
+  value: unknown,
+  errors: ValidationError[],
+): void {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    errors.push({
+      field: "locationData",
+      message: "Location data must be an object",
+    });
+    return;
+  }
+
+  const location = value as Record<string, unknown>;
+
+  if (!location.label || typeof location.label !== "string") {
+    errors.push({
+      field: "locationData.label",
+      message: "Location data label is required",
+    });
+  } else if (location.label.length > MAX_LOCATION_LENGTH) {
+    errors.push({
+      field: "locationData.label",
+      message: `Location data label must be ${MAX_LOCATION_LENGTH} characters or less`,
+    });
+  }
+
+  validateCoordinate(
+    location.latitude,
+    "locationData.latitude",
+    -90,
+    90,
+    errors,
+  );
+  validateCoordinate(
+    location.longitude,
+    "locationData.longitude",
+    -180,
+    180,
+    errors,
+  );
+
+  if (
+    typeof location.precision !== "string" ||
+    !VALID_LOCATION_PRECISIONS.includes(
+      location.precision as Me3LocationPrecision,
+    )
+  ) {
+    errors.push({
+      field: "locationData.precision",
+      message: `Location data precision must be one of: ${VALID_LOCATION_PRECISIONS.join(", ")}`,
+    });
+  }
+
+  validateOptionalLocationText(location, "locality", "locationData.locality", errors);
+  validateOptionalLocationText(location, "region", "locationData.region", errors);
+  validateOptionalLocationText(location, "country", "locationData.country", errors);
+
+  if (location.countryCode !== undefined) {
+    if (typeof location.countryCode !== "string") {
+      errors.push({
+        field: "locationData.countryCode",
+        message: "locationData.countryCode must be a string",
+      });
+    } else if (!/^[A-Z]{2}$/.test(location.countryCode)) {
+      errors.push({
+        field: "locationData.countryCode",
+        message: "locationData.countryCode must be an ISO 3166-1 alpha-2 code",
+      });
+    }
+  }
+
+  if (location.source !== undefined) {
+    if (
+      typeof location.source !== "object" ||
+      location.source === null ||
+      Array.isArray(location.source)
+    ) {
+      errors.push({
+        field: "locationData.source",
+        message: "Location data source must be an object",
+      });
+    } else {
+      const source = location.source as Record<string, unknown>;
+      if (!source.provider || typeof source.provider !== "string") {
+        errors.push({
+          field: "locationData.source.provider",
+          message: "Location data source provider is required",
+        });
+      } else if (source.provider.length > MAX_LOCATION_SOURCE_LENGTH) {
+        errors.push({
+          field: "locationData.source.provider",
+          message: `Location data source provider must be ${MAX_LOCATION_SOURCE_LENGTH} characters or less`,
+        });
+      }
+      validateOptionalLocationText(
+        source,
+        "id",
+        "locationData.source.id",
+        errors,
+        MAX_LOCATION_SOURCE_LENGTH,
+      );
+      validateOptionalLocationText(
+        source,
+        "osmType",
+        "locationData.source.osmType",
+        errors,
+        MAX_LOCATION_SOURCE_LENGTH,
+      );
+      validateOptionalLocationText(
+        source,
+        "osmKey",
+        "locationData.source.osmKey",
+        errors,
+        MAX_LOCATION_SOURCE_LENGTH,
+      );
+      validateOptionalLocationText(
+        source,
+        "osmValue",
+        "locationData.source.osmValue",
+        errors,
+        MAX_LOCATION_SOURCE_LENGTH,
+      );
+      if (
+        source.osmId !== undefined &&
+        typeof source.osmId !== "string" &&
+        typeof source.osmId !== "number"
+      ) {
+        errors.push({
+          field: "locationData.source.osmId",
+          message: "locationData.source.osmId must be a string or number",
+        });
+      }
+    }
+  }
+}
 
 /**
  * Validate a me3 profile object
@@ -486,6 +713,11 @@ export function validateProfile(data: unknown): ValidationResult {
         message: `Location must be ${MAX_LOCATION_LENGTH} characters or less`,
       });
     }
+  }
+
+  // Structured public location data (optional)
+  if (profile.locationData !== undefined) {
+    validateLocationData(profile.locationData, errors);
   }
 
   // Bio (optional)
