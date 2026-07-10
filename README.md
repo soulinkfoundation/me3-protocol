@@ -222,5 +222,6 @@ A standard JSON Schema is available at [`schema.json`](./schema.json).
 ## Versioning
 
 - **Current version**: `0.1`
+- The protocol version describes `me.json` compatibility. It is independent from the npm package release version.
 - **Stability**: Additive changes only. Breaking changes require a version bump.
 - **Extensions**: Use `business` for site/business context and `links` for lightweight presentation extensions.

@@ -1,7 +1,7 @@
 {
   "name": "me3-protocol",
   "version": "2.16.0",
-  "description": "",
+  "description": "Public me.json types, validation, schema, and examples for the ME3 ecosystem.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
@@ -26,15 +26,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Soulink-Foundation/me3.git"
+    "url": "git+https://github.com/soulinkfoundation/me3-protocol.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Soulink-Foundation/me3/issues"
+    "url": "https://github.com/soulinkfoundation/me3-protocol/issues"
   },
-  "homepage": "https://github.com/Soulink-Foundation/me3#readme",
+  "homepage": "https://github.com/soulinkfoundation/me3-protocol#readme",
   "devDependencies": {
     "ts-json-schema-generator": "^2.4.0",
     "typescript": "^5.9.3"
