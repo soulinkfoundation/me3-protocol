@@ -1,5 +1,9 @@
 {
-  "version": "0.1",
+  "$schema": "https://unpkg.com/me3-protocol@3.0.0/schema.json",
+  "version": "0.2",
+  "kind": "person",
+  "id": "https://example.com/me.json",
+  "url": "https://example.com/",
   "name": "Example Name",
   "handle": "example",
   "location": "Cork, County Cork, Ireland",
@@ -12,55 +16,62 @@
     "region": "County Cork",
     "country": "Ireland",
     "countryCode": "IE",
-    "source": {
-      "provider": "photon",
-      "id": "N:123",
-      "osmType": "N",
-      "osmId": 123,
-      "osmKey": "place",
-      "osmValue": "city"
-    }
+    "placeId": "osm:node:123"
   },
-  "bio": "Short example bio describing what this person does.",
+  "bio": "A concise public description of this person.",
+  "avatar": "./files/avatar.jpg",
+  "banner": "./files/banner.jpg",
   "business": {
-    "positioningStatement": "I help service-based founders with unclear offers by shaping a clearer offer that is easier to buy.",
+    "positioningStatement": "I help service-based founders shape clearer offers that are easier to buy.",
     "audience": "service-based founders",
     "primaryProblem": "unclear offers",
     "solution": "shaping a clearer offer that is easier to buy",
     "targetMarket": "service-based founders",
-    "primaryOutcome": "a clearer offer that is easier to buy"
+    "primaryOutcome": "a clearer offer and next step"
   },
-  "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=example",
-  "banner": "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1200&h=400&fit=crop",
-  "links": {
-    "website": "https://example.com",
-    "github": "example",
-    "soulink": "example"
-  },
-  "buttons": [
+  "links": [
     {
-      "text": "Primary Call To Action",
-      "url": "https://cal.com/example",
-      "style": "primary",
-      "icon": "📅"
+      "rel": "website",
+      "href": "https://example.com/"
     },
     {
-      "text": "Secondary Action",
-      "url": "https://buymeacoffee.com/example",
-      "style": "secondary",
-      "icon": "☕"
+      "rel": "github",
+      "href": "https://github.com/example"
+    },
+    {
+      "rel": "email",
+      "href": "mailto:hello@example.com",
+      "label": "Email"
     }
   ],
   "pages": [
-    { "slug": "about", "title": "About", "file": "about.md", "visible": true }
+    {
+      "id": "about",
+      "title": "About",
+      "url": "./about.html"
+    }
   ],
   "posts": [
     {
-      "slug": "hello-world",
+      "id": "hello-world",
       "title": "Hello World",
-      "file": "blog/hello-world.md",
+      "url": "./blog/hello-world.html",
+      "type": "article",
       "publishedAt": "2026-01-29T12:00:00.000Z",
-      "excerpt": "A short welcome post for the blog."
+      "excerpt": "A short welcome post."
+    }
+  ],
+  "products": [
+    {
+      "id": "positioning-guide",
+      "title": "Positioning Guide",
+      "description": "A practical guide for clarifying an offer.",
+      "url": "./shop/positioning-guide.html",
+      "price": {
+        "amount": "29.00",
+        "currency": "EUR"
+      },
+      "available": true
     }
   ],
   "services": [
@@ -68,58 +79,54 @@
       "id": "discovery-call",
       "title": "Discovery Call",
       "description": "A first conversation to explore fit and next steps.",
+      "url": "https://example.com/book",
       "sessionType": "1:1",
-      "duration": 30,
-      "price": 0,
-      "currency": "EUR",
-      "whoItsFor": ["founders", "coaches"],
-      "outcomes": ["clarity", "next steps"],
-      "availabilityMode": "native",
+      "durationMinutes": 30,
+      "price": {
+        "amount": "0.00",
+        "currency": "EUR"
+      },
+      "whoItsFor": [
+        "founders",
+        "coaches"
+      ],
+      "outcomes": [
+        "clarity",
+        "next steps"
+      ],
+      "availability": "calendar",
       "status": "active"
     }
   ],
-  "intents": {
-    "subscribe": {
-      "enabled": true,
-      "title": "Weekly Insights",
-      "description": "Curated thoughts on design, tech, and creativity every Sunday",
-      "frequency": "weekly"
-    },
-    "book": {
-      "enabled": true,
-      "title": "30-min Consultation",
-      "description": "Let's discuss your project",
-      "duration": 30,
-      "availability": {
-        "timezone": "America/New_York",
-        "windows": {
-          "monday": ["09:00-12:00", "14:00-17:00"],
-          "tuesday": ["09:00-17:00"],
-          "wednesday": ["09:00-17:00"],
-          "thursday": ["09:00-17:00"],
-          "friday": ["09:00-12:00"]
-        }
-      }
-    }
-  },
   "actions": {
     "subscribe": {
-      "method": "POST",
-      "url": "https://api.me3.app/api/sites/example/subscribe",
-      "requires": ["email"],
-      "description": "Subscribe someone to this site's newsletter."
+      "type": "link",
+      "url": "https://example.com/newsletter",
+      "description": "Open the public newsletter signup flow."
     },
-    "checkAvailability": {
-      "method": "GET",
-      "url": "https://api.me3.app/api/book/example/slots{?date}",
-      "requires": ["date"],
-      "description": "Return available booking slots for a given date."
+    "book": {
+      "type": "openapi",
+      "spec": "https://api.example.com/openapi.json",
+      "operationId": "createBooking",
+      "description": "Book a published service using the documented API operation."
+    }
+  },
+  "capabilities": {
+    "subscribe": {
+      "action": "subscribe",
+      "title": "Weekly Insights"
     },
-    "createBooking": {
-      "method": "POST",
-      "url": "https://api.me3.app/api/book/example/confirm",
-      "requires": ["slotStart", "slotEnd", "guestName", "guestEmail"],
-      "description": "Confirm a booking for the selected slot."
+    "book": {
+      "action": "book",
+      "title": "Book a session",
+      "offeringIds": [
+        "discovery-call"
+      ]
+    }
+  },
+  "extensions": {
+    "example.com/presentation": {
+      "theme": "plain"
     }
   }
 }

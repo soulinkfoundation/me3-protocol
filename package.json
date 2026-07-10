@@ -1,6 +1,6 @@
 {
   "name": "me3-protocol",
-  "version": "2.16.0",
+  "version": "3.0.0",
   "description": "Public me.json types, validation, schema, and examples for the ME3 ecosystem.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -11,10 +11,10 @@
     "examples"
   ],
   "scripts": {
-    "build": "tsc",
-    "test": "npm run build && node --test",
-    "generate-schema": "ts-json-schema-generator --path 'src/index.ts' --type 'Me3Profile' --out 'schema.json' --no-type-check",
-    "prepublishOnly": "npm run build && npm run generate-schema"
+    "build": "tsc && node scripts/generate-schema.mjs",
+    "test": "pnpm build && node --test",
+    "generate-schema": "node scripts/generate-schema.mjs",
+    "prepublishOnly": "pnpm test"
   },
   "exports": {
     ".": {
@@ -28,7 +28,13 @@
     "type": "git",
     "url": "git+https://github.com/soulinkfoundation/me3-protocol.git"
   },
-  "keywords": [],
+  "keywords": [
+    "me.json",
+    "identity",
+    "agents",
+    "discovery",
+    "json-schema"
+  ],
   "author": "",
   "license": "ISC",
   "bugs": {
@@ -36,7 +42,9 @@
   },
   "homepage": "https://github.com/soulinkfoundation/me3-protocol#readme",
   "devDependencies": {
-    "ts-json-schema-generator": "^2.4.0",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@sinclair/typebox": "^0.34.50"
   }
 }

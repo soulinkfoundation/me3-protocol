@@ -1,18 +1,17 @@
 {
-  "version": "0.1",
+  "$schema": "https://unpkg.com/me3-protocol@3.0.0/schema.json",
+  "version": "0.2",
+  "kind": "person",
+  "id": "https://janedoe.example/me.json",
+  "url": "https://janedoe.example/",
   "name": "Jane Doe",
   "handle": "janedoe",
   "location": "Remote",
-  "bio": "Minimalist example.",
-  "business": {
-    "positioningStatement": "I help independent consultants with muddy positioning by clarifying their offer.",
-    "audience": "independent consultants",
-    "primaryProblem": "muddy positioning",
-    "solution": "clarifying their offer",
-    "targetMarket": "consultants",
-    "primaryOutcome": "clearer positioning"
-  },
-  "links": {
-    "twitter": "janedoe"
-  }
+  "bio": "Independent consultant helping teams explain complex products clearly.",
+  "links": [
+    {
+      "rel": "website",
+      "href": "https://janedoe.example/"
+    }
+  ]
 }

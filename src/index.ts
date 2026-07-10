@@ -1,432 +1,319 @@
-/**
- * me3 Protocol v0.1
- *
- * A protocol for portable personal websites.
- * Your site lives in a single me.json file that you can take anywhere.
- */
+import { Static, Type } from "@sinclair/typebox";
+import { Value } from "@sinclair/typebox/value";
 
-// ============================================================================
-// Types
-// ============================================================================
+export const ME3_VERSION = "0.2" as const;
+export const ME3_FILENAME = "me.json" as const;
+export const ME3_WELL_KNOWN_PATH = "/.well-known/me.json" as const;
+export const ME3_SCHEMA_URL =
+  "https://unpkg.com/me3-protocol@3.0.0/schema.json" as const;
 
-export interface Me3Page {
-  /** URL-friendly identifier */
-  slug: string;
-  /** Display name for navigation */
-  title: string;
-  /** Path to markdown file (relative to me.json) */
-  file: string;
-  /** Whether to show in navigation */
-  visible: boolean;
-}
+const ID_PATTERN = "^[A-Za-z0-9][A-Za-z0-9._:-]*$";
+const URI_PATTERN = "^[A-Za-z][A-Za-z0-9+.-]*:";
+const HTTPS_PATTERN = "^https://";
+const LINK_URI_PATTERN = "^(https://|mailto:|tel:)";
+const ASSET_REFERENCE_PATTERN = "^(https://|\\./|/)";
+const MONEY_PATTERN = "^(0|[1-9][0-9]*)(\\.[0-9]+)?$";
+const CURRENCY_PATTERN = "^[A-Z]{3}$";
+const COUNTRY_CODE_PATTERN = "^[A-Z]{2}$";
+const EXTENSION_KEY_PATTERN =
+  "^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?/[A-Za-z0-9][A-Za-z0-9._-]*$";
 
-export interface Me3Post {
-  /** URL-friendly identifier */
-  slug: string;
-  /** Display name for listing */
-  title: string;
-  /** Path to markdown file (relative to me.json) */
-  file: string;
-  /** Post format (optional) */
-  type?: Me3PostType;
-  /** Media payload for non-text posts (optional) */
-  media?: Me3Media;
-  /** ISO publish date (optional) */
-  publishedAt?: string;
-  /** Short excerpt for archive/listing (optional) */
-  excerpt?: string;
-  /** ISO timestamp when post was sent to newsletter subscribers (optional) */
-  emailedAt?: string;
-}
+const Id = Type.String({ minLength: 1, maxLength: 120, pattern: ID_PATTERN });
+const Uri = Type.String({ minLength: 1, maxLength: 2048, pattern: URI_PATTERN });
+const LinkUri = Type.String({
+  minLength: 1,
+  maxLength: 2048,
+  pattern: LINK_URI_PATTERN,
+});
+const HttpsUri = Type.String({
+  minLength: 9,
+  maxLength: 2048,
+  pattern: HTTPS_PATTERN,
+});
+const AssetReference = Type.String({
+  minLength: 1,
+  maxLength: 2048,
+  pattern: ASSET_REFERENCE_PATTERN,
+});
+const ShortText = Type.String({ minLength: 1, maxLength: 160 });
+const Description = Type.String({ minLength: 1, maxLength: 1000 });
+const JsonValue = Type.Recursive((This) =>
+  Type.Union([
+    Type.String(),
+    Type.Number(),
+    Type.Boolean(),
+    Type.Null(),
+    Type.Array(This),
+    Type.Record(Type.String(), This),
+  ]),
+);
 
-export type Me3PostType =
-  | "article"
-  | "note"
-  | "video"
-  | "audio"
-  | "image"
-  | "link";
+export const Me3MoneySchema = Type.Object(
+  {
+    amount: Type.String({ pattern: MONEY_PATTERN }),
+    currency: Type.String({ pattern: CURRENCY_PATTERN }),
+  },
+  {
+    additionalProperties: false,
+    description:
+      "A non-negative decimal amount in major currency units and an ISO 4217 currency code.",
+  },
+);
+export type Me3Money = Static<typeof Me3MoneySchema>;
 
-export interface Me3Media {
-  /** Media URL (player or file) */
-  url?: string;
-  /** Duration in seconds (optional) */
-  duration?: number;
-  /** Thumbnail URL (optional) */
-  thumbnail?: string;
-  /** Provider identifier (optional) */
-  provider?: string;
-  /** Provider-specific id (optional) */
-  id?: string;
-}
+export const Me3LinkSchema = Type.Object(
+  {
+    rel: Type.String({
+      minLength: 1,
+      maxLength: 80,
+      pattern: "^[a-z][a-z0-9._-]*$",
+    }),
+    href: LinkUri,
+    label: Type.Optional(ShortText),
+  },
+  { additionalProperties: false },
+);
+export type Me3Link = Static<typeof Me3LinkSchema>;
 
-export interface Me3Product {
-  /** URL-friendly identifier */
-  slug: string;
-  /** Product name */
-  title: string;
-  /** Path to markdown file (relative to me.json) */
-  file: string;
-  /** Product price in cents (e.g., 2999 for $29.99) */
-  price: number;
-  /** Currency code */
-  currency: "USD" | "GBP" | "EUR" | "CAD" | "AUD" | "CHF" | "SGD" | "INR" | "PKR";
-  /** Product images (URLs) */
-  images?: string[];
-  /** Whether product is available for purchase */
-  available?: boolean;
-  /** ISO publish date (optional) */
-  publishedAt?: string;
-  /** Short excerpt for listings (optional) */
-  excerpt?: string;
-}
+export const Me3PageSchema = Type.Object(
+  {
+    id: Id,
+    title: ShortText,
+    url: AssetReference,
+  },
+  { additionalProperties: false },
+);
+export type Me3Page = Static<typeof Me3PageSchema>;
 
-export interface Me3Testimonial {
-  /** Person's display name */
-  name: string;
-  /** Social handle (optional) */
-  handle?: string;
-  /** Avatar image URL */
-  avatar?: string;
-  /** The testimonial quote text */
-  quote: string;
-  /** Link to their profile/site (optional) */
-  profileUrl?: string;
-}
+export const Me3MediaSchema = Type.Object(
+  {
+    url: AssetReference,
+    durationSeconds: Type.Optional(Type.Number({ minimum: 0 })),
+    thumbnail: Type.Optional(AssetReference),
+  },
+  { additionalProperties: false },
+);
+export type Me3Media = Static<typeof Me3MediaSchema>;
 
-export type Me3TestimonialDisplay = "homepage" | "standalone";
+export const Me3PostSchema = Type.Object(
+  {
+    id: Id,
+    title: ShortText,
+    url: AssetReference,
+    type: Type.Optional(
+      Type.Union([
+        Type.Literal("article"),
+        Type.Literal("note"),
+        Type.Literal("video"),
+        Type.Literal("audio"),
+        Type.Literal("image"),
+        Type.Literal("link"),
+      ]),
+    ),
+    media: Type.Optional(Me3MediaSchema),
+    publishedAt: Type.Optional(Type.String({ minLength: 1, maxLength: 80 })),
+    excerpt: Type.Optional(Type.String({ minLength: 1, maxLength: 500 })),
+  },
+  { additionalProperties: false },
+);
+export type Me3Post = Static<typeof Me3PostSchema>;
+export type Me3PostType = NonNullable<Me3Post["type"]>;
 
-export interface Me3Links {
-  website?: string;
-  github?: string;
-  twitter?: string;
-  linkedin?: string;
-  instagram?: string;
-  youtube?: string;
-  tiktok?: string;
-  email?: string;
-  [key: string]: string | undefined;
-}
+export const Me3ProductSchema = Type.Object(
+  {
+    id: Id,
+    title: ShortText,
+    description: Type.Optional(Description),
+    url: Type.Optional(AssetReference),
+    price: Me3MoneySchema,
+    images: Type.Optional(Type.Array(AssetReference, { maxItems: 20 })),
+    available: Type.Optional(Type.Boolean()),
+  },
+  { additionalProperties: false },
+);
+export type Me3Product = Static<typeof Me3ProductSchema>;
 
-export interface Me3Button {
-  /** Button text (max 30 chars) */
-  text: string;
-  /** URL to open when clicked */
-  url: string;
-  /** Button style */
-  style?: "primary" | "secondary" | "outline";
-  /** Optional icon (emoji or icon identifier) */
-  icon?: string;
-}
+export const Me3ServiceSchema = Type.Object(
+  {
+    id: Id,
+    title: ShortText,
+    description: Type.Optional(Description),
+    url: Type.Optional(AssetReference),
+    sessionType: Type.Optional(ShortText),
+    durationMinutes: Type.Optional(Type.Number({ exclusiveMinimum: 0 })),
+    price: Type.Optional(Me3MoneySchema),
+    whoItsFor: Type.Optional(Type.Array(ShortText, { maxItems: 30 })),
+    outcomes: Type.Optional(Type.Array(ShortText, { maxItems: 30 })),
+    availability: Type.Optional(
+      Type.Union([
+        Type.Literal("calendar"),
+        Type.Literal("external"),
+        Type.Literal("manual"),
+      ]),
+    ),
+    status: Type.Optional(
+      Type.Union([Type.Literal("active"), Type.Literal("paused")]),
+    ),
+  },
+  { additionalProperties: false },
+);
+export type Me3Service = Static<typeof Me3ServiceSchema>;
 
-export interface Me3FooterLink {
-  /** Link text */
-  text: string;
-  /** URL to open when clicked */
-  url: string;
-}
+export const Me3BusinessContextSchema = Type.Object(
+  {
+    positioningStatement: Type.Optional(
+      Type.String({ minLength: 1, maxLength: 320 }),
+    ),
+    audience: Type.Optional(ShortText),
+    primaryProblem: Type.Optional(ShortText),
+    solution: Type.Optional(Type.String({ minLength: 1, maxLength: 240 })),
+    targetMarket: Type.Optional(ShortText),
+    primaryOutcome: Type.Optional(
+      Type.String({ minLength: 1, maxLength: 240 }),
+    ),
+  },
+  { additionalProperties: false },
+);
+export type Me3BusinessContext = Static<typeof Me3BusinessContextSchema>;
 
-export interface Me3Footer {
-  /** Custom footer text (e.g. "Built by Jane") */
-  text?: string;
-  /** Optional custom footer link */
-  link?: Me3FooterLink;
-}
+export const Me3LocationDataSchema = Type.Object(
+  {
+    label: Type.String({ minLength: 1, maxLength: 160 }),
+    latitude: Type.Number({ minimum: -90, maximum: 90 }),
+    longitude: Type.Number({ minimum: -180, maximum: 180 }),
+    precision: Type.Union([
+      Type.Literal("locality"),
+      Type.Literal("city"),
+      Type.Literal("district"),
+      Type.Literal("county"),
+      Type.Literal("region"),
+      Type.Literal("country"),
+      Type.Literal("unknown"),
+    ]),
+    locality: Type.Optional(ShortText),
+    region: Type.Optional(ShortText),
+    country: Type.Optional(ShortText),
+    countryCode: Type.Optional(Type.String({ pattern: COUNTRY_CODE_PATTERN })),
+    placeId: Type.Optional(
+      Type.String({ minLength: 3, maxLength: 200, pattern: URI_PATTERN }),
+    ),
+  },
+  {
+    additionalProperties: false,
+    description:
+      "Approximate public place data. Publishers should use locality-level coordinates, never a private street address.",
+  },
+);
+export type Me3LocationData = Static<typeof Me3LocationDataSchema>;
+export type Me3LocationPrecision = Me3LocationData["precision"];
 
-export interface Me3Verification {
-  /** Whether the author is a verified human */
-  verified: boolean;
-  /** The domain used for verification */
-  verifiedDomain?: string;
-  /** When verification occurred (ISO timestamp) */
-  verifiedAt?: string;
-}
+export const Me3LinkActionSchema = Type.Object(
+  {
+    type: Type.Literal("link"),
+    url: HttpsUri,
+    description: Type.Optional(Description),
+  },
+  {
+    additionalProperties: false,
+    description: "A human-facing HTTPS flow.",
+  },
+);
+export type Me3LinkAction = Static<typeof Me3LinkActionSchema>;
 
-export type Me3ActionMethod = "GET" | "POST";
+export const Me3OpenApiActionSchema = Type.Object(
+  {
+    type: Type.Literal("openapi"),
+    spec: HttpsUri,
+    operationId: Id,
+    description: Type.Optional(Description),
+  },
+  {
+    additionalProperties: false,
+    description:
+      "An operation described by a public OpenAPI document. Discovery does not grant authority to invoke it.",
+  },
+);
+export type Me3OpenApiAction = Static<typeof Me3OpenApiActionSchema>;
 
-/**
- * Explicit action descriptors that agents can invoke.
- * These make the protocol self-describing without requiring knowledge of ME3 conventions.
- */
-export interface Me3ActionDefinition {
-  /** HTTP method to use */
-  method: Me3ActionMethod;
-  /** Action endpoint URL */
-  url: string;
-  /** Required input fields an agent must collect before invoking */
-  requires?: string[];
-  /** Human-readable description of what the action does */
-  description?: string;
-}
+export const Me3ActionDefinitionSchema = Type.Union([
+  Me3LinkActionSchema,
+  Me3OpenApiActionSchema,
+]);
+export type Me3ActionDefinition = Static<typeof Me3ActionDefinitionSchema>;
 
-export type Me3ServiceAvailabilityMode =
-  | "calendar"
-  | "native"
-  | "external"
-  | "manual";
+export const Me3CapabilitySchema = Type.Object(
+  {
+    action: Id,
+    title: Type.Optional(ShortText),
+    description: Type.Optional(Description),
+    offeringIds: Type.Optional(
+      Type.Array(Id, { maxItems: 100, uniqueItems: true }),
+    ),
+  },
+  { additionalProperties: false },
+);
+export type Me3Capability = Static<typeof Me3CapabilitySchema>;
 
-export type Me3ServiceStatus = "active" | "paused" | "draft";
-
-/**
- * Structured service or offering metadata.
- * This lets agents understand who a session is for and what outcome it provides.
- */
-export interface Me3Service {
-  /** Stable identifier for the service */
-  id: string;
-  /** Display title */
-  title: string;
-  /** Short service description */
-  description?: string;
-  /** Delivery/session type (e.g. "1:1", "group", "async") */
-  sessionType?: string;
-  /** Duration in minutes */
-  duration?: number;
-  /** Price in major currency units (e.g. 50 for EUR 50) */
-  price?: number;
-  /** Currency code for the price */
-  currency?: "USD" | "GBP" | "EUR" | "CAD" | "AUD" | "CHF" | "SGD" | "INR" | "PKR";
-  /** Short audience descriptors */
-  whoItsFor?: string[];
-  /** Expected outcomes or benefits */
-  outcomes?: string[];
-  /** How availability is managed */
-  availabilityMode?: Me3ServiceAvailabilityMode;
-  /** Current service status */
-  status?: Me3ServiceStatus;
-}
-
-/**
- * Structured site/business context for agents and positioning.
- * This keeps offer clarity explicit without overloading freeform bio text.
- */
-export interface Me3BusinessContext {
-  /** Full positioning sentence used as the basis for agent understanding */
-  positioningStatement?: string;
-  /** Human-facing description of the ideal client or audience */
-  audience?: string;
-  /** Core pain point, blocker, or job-to-be-done */
-  primaryProblem?: string;
-  /** How the person solves the problem or delivers the offer */
-  solution?: string;
-  /** Tight target-market label for routing and positioning */
-  targetMarket?: string;
-  /** Main progress the buyer is hiring the offer to create */
-  primaryOutcome?: string;
-}
-
-// ============================================================================
-// Intents - Machine-readable actions visitors can take
-// ============================================================================
-
-/**
- * Newsletter subscription intent.
- * When enabled, the site accepts email subscriptions via POST /api/subscribe
- */
-export interface Me3IntentSubscribe {
-  /** Whether newsletter signups are enabled */
-  enabled: boolean;
-  /** Newsletter title (e.g., "AI Weekly") - for agents to present context */
-  title?: string;
-  /** What subscribers will receive - for agents to explain the value */
-  description?: string;
-  /** How often subscribers will hear from you */
-  frequency?: "daily" | "weekly" | "monthly" | "irregular";
-}
-
-/**
- * Availability windows for booking.
- * Defines when the person is available for meetings.
- */
-export interface Me3BookingAvailability {
-  /** Timezone for the availability windows (e.g., "America/New_York") */
-  timezone: string;
-  /** Weekly availability windows by day */
-  windows: {
-    monday?: string[];
-    tuesday?: string[];
-    wednesday?: string[];
-    thursday?: string[];
-    friday?: string[];
-    saturday?: string[];
-    sunday?: string[];
-  };
-}
-
-/**
- * Booking pricing configuration.
- * Allows hosts to charge for meetings with a sliding scale pay-what-you-want model.
- */
-export interface Me3BookingPricing {
-  /** Whether paid meetings are enabled */
-  enabled: boolean;
-  /** Suggested price amount in dollars (e.g., 50 for $50) */
-  suggestedAmount: number;
-  /** Currency code */
-  currency: "USD" | "GBP" | "EUR" | "CAD" | "AUD" | "CHF" | "SGD" | "INR" | "PKR";
-  /** Minimum amount bookers can pay (always $5) */
-  minimumAmount: 5;
-  /** Whether to allow free meetings alongside paid ones */
-  allowFree: boolean;
-}
-
-/**
- * Booking/scheduling intent.
- * Declares that the person accepts meeting bookings.
- */
-export interface Me3IntentBook {
-  /** Whether booking is enabled */
-  enabled: boolean;
-  /** Meeting title (e.g., "30-min Consultation") */
-  title?: string;
-  /** What the meeting is about */
-  description?: string;
-  /** Meeting duration in minutes */
-  duration?: number;
-  /** Buffer time between meetings in minutes (default: 0) */
-  bufferTime?: number;
-  /** Booking provider (e.g., "cal.com", "calendly") - for external providers */
-  provider?: string;
-  /** Direct booking URL - for external booking systems */
-  url?: string;
-  /** Availability windows - for native me3 booking */
-  availability?: Me3BookingAvailability;
-  /** Pricing configuration for paid meetings (optional) */
-  pricing?: Me3BookingPricing;
-}
-
-/**
- * Shop intent.
- * Declares that the person sells products via a simple shop.
- */
-export interface Me3IntentShop {
-  /** Whether shop is enabled */
-  enabled: boolean;
-  /** Shop title/name */
-  title?: string;
-  /** Shop description */
-  description?: string;
-  /** Shop currency */
-  currency: "USD" | "GBP" | "EUR" | "CAD" | "AUD" | "CHF" | "SGD" | "INR" | "PKR";
-}
-
-/**
- * Intents object - declares what actions visitors/agents can take.
- * This is the machine-readable API contract for interacting with a person.
- */
-export interface Me3Intents {
-  /** Newsletter subscription */
-  subscribe?: Me3IntentSubscribe;
-  /** Meeting booking */
-  book?: Me3IntentBook;
-  /** Shop intent */
-  shop?: Me3IntentShop;
-}
-
-export type Me3LocationPrecision =
-  | "locality"
-  | "city"
-  | "district"
-  | "county"
-  | "region"
-  | "country"
-  | "unknown";
-
-export interface Me3LocationSource {
-  /** Lookup provider or data source used to resolve this public location */
-  provider: string;
-  /** Provider-specific stable place identifier */
-  id?: string;
-  /** OpenStreetMap object type, when available */
-  osmType?: string;
-  /** OpenStreetMap object id, when available */
-  osmId?: string | number;
-  /** OpenStreetMap primary tag key, when available */
-  osmKey?: string;
-  /** OpenStreetMap primary tag value, when available */
-  osmValue?: string;
-}
-
-export interface Me3LocationData {
-  /** Human-readable public place label, usually town/city plus region/country */
-  label: string;
-  /** Approximate latitude for local discovery; should be town/city-level, not an exact address */
-  latitude: number;
-  /** Approximate longitude for local discovery; should be town/city-level, not an exact address */
-  longitude: number;
-  /** Approximation level for the stored public location */
-  precision: Me3LocationPrecision;
-  /** Town, city, locality, or nearest named place */
-  locality?: string;
-  /** Region, state, county, province, or equivalent */
-  region?: string;
-  /** Country name */
-  country?: string;
-  /** ISO 3166-1 alpha-2 country code */
-  countryCode?: string;
-  /** Optional lookup source metadata for refresh/dedupe */
-  source?: Me3LocationSource;
-}
-
-export interface Me3Profile {
-  /** Protocol version */
-  version: string;
-  /** Display name (required) */
-  name: string;
-  /** Username/handle */
-  handle?: string;
-  /** Freeform location string (e.g. "Remote", "Berlin, Germany") */
-  location?: string;
-  /** Structured public location data for approximate local discovery */
-  locationData?: Me3LocationData;
-  /** Short bio */
-  bio?: string;
-  /** Avatar URL (absolute or relative) */
-  avatar?: string;
-  /** Banner/header image URL */
-  banner?: string;
-  /** Social and external links */
-  links?: Me3Links;
-  /** Call-to-action buttons */
-  buttons?: Me3Button[];
-  /** Custom pages (markdown) */
-  pages?: Me3Page[];
-  /** Blog posts (markdown) */
-  posts?: Me3Post[];
-  /** Products (markdown) */
-  products?: Me3Product[];
-  /** Structured site/business context for agents */
-  business?: Me3BusinessContext;
-  /** Structured services or offerings for agents to evaluate */
-  services?: Me3Service[];
-  /** Explicit action descriptors for agent invocation */
-  actions?: Record<string, Me3ActionDefinition>;
-  /** Testimonials / social proof */
-  testimonials?: Me3Testimonial[];
-  /** Where testimonials should be displayed */
-  testimonialDisplay?: Me3TestimonialDisplay;
-  /** Title for the testimonials section/page */
-  testimonialsTitle?: string;
-  /**
-   * Custom footer configuration.
-   * - `undefined`: default footer behavior (renderer-defined)
-   * - `false`: hide footer (renderer may restrict this to Pro tiers)
-   */
-  footer?: Me3Footer | false;
-  /**
-   * Intents - machine-readable actions that visitors/agents can take.
-   * This is the API contract for interacting with the person.
-   */
-  intents?: Me3Intents;
-  /**
-   * Human verification status (populated from account, not editable per-site)
-   */
-  verification?: Me3Verification;
-}
-
-// ============================================================================
-// Validation
-// ============================================================================
+export const Me3ProfileSchema = Type.Object(
+  {
+    $schema: Type.Optional(Type.Literal(ME3_SCHEMA_URL)),
+    version: Type.Literal(ME3_VERSION),
+    kind: Type.Union([
+      Type.Literal("person"),
+      Type.Literal("organization"),
+      Type.Literal("application"),
+      Type.Literal("agent"),
+    ]),
+    name: Type.String({ minLength: 1, maxLength: 100 }),
+    id: Type.Optional(Uri),
+    url: Type.Optional(HttpsUri),
+    handle: Type.Optional(
+      Type.String({
+        minLength: 1,
+        maxLength: 60,
+        pattern: "^[A-Za-z0-9_-]+$",
+      }),
+    ),
+    bio: Type.Optional(Type.String({ minLength: 1, maxLength: 500 })),
+    avatar: Type.Optional(AssetReference),
+    banner: Type.Optional(AssetReference),
+    location: Type.Optional(Type.String({ minLength: 1, maxLength: 160 })),
+    locationData: Type.Optional(Me3LocationDataSchema),
+    links: Type.Optional(Type.Array(Me3LinkSchema, { maxItems: 100 })),
+    pages: Type.Optional(Type.Array(Me3PageSchema, { maxItems: 500 })),
+    posts: Type.Optional(Type.Array(Me3PostSchema, { maxItems: 5000 })),
+    products: Type.Optional(Type.Array(Me3ProductSchema, { maxItems: 500 })),
+    business: Type.Optional(Me3BusinessContextSchema),
+    services: Type.Optional(Type.Array(Me3ServiceSchema, { maxItems: 500 })),
+    actions: Type.Optional(
+      Type.Record(
+        Type.String({ pattern: ID_PATTERN }),
+        Me3ActionDefinitionSchema,
+        { additionalProperties: false },
+      ),
+    ),
+    capabilities: Type.Optional(
+      Type.Record(Type.String({ pattern: ID_PATTERN }), Me3CapabilitySchema, {
+        additionalProperties: false,
+      }),
+    ),
+    extensions: Type.Optional(
+      Type.Record(
+        Type.String({ pattern: EXTENSION_KEY_PATTERN }),
+        JsonValue,
+        { additionalProperties: false },
+      ),
+    ),
+  },
+  {
+    $id: "urn:me3:protocol:0.2",
+    title: "me3 Protocol Profile 0.2",
+    description:
+      "A portable public identity, content, offering, and capability manifest.",
+    additionalProperties: false,
+  },
+);
+export type Me3Profile = Static<typeof Me3ProfileSchema>;
 
 export interface ValidationError {
   field: string;
@@ -439,1483 +326,88 @@ export interface ValidationResult {
   profile?: Me3Profile;
 }
 
-const CURRENT_VERSION = "0.1";
-const MAX_NAME_LENGTH = 100;
-const MAX_BIO_LENGTH = 500;
-const MAX_HANDLE_LENGTH = 30;
-const HANDLE_REGEX = /^[a-z0-9_-]+$/i;
-const MAX_LOCATION_LENGTH = 100;
-const MAX_LOCATION_SOURCE_LENGTH = 80;
-const MAX_BUTTON_TEXT_LENGTH = 30;
-const VALID_BUTTON_STYLES = ["primary", "secondary", "outline"];
-const URL_REGEX = /^https?:\/\/.+/i;
-const MAX_FOOTER_TEXT_LENGTH = 200;
-const MAX_FOOTER_LINK_TEXT_LENGTH = 60;
-const MAX_BUSINESS_POSITIONING_STATEMENT_LENGTH = 320;
-const MAX_BUSINESS_AUDIENCE_LENGTH = 160;
-const MAX_BUSINESS_PRIMARY_PROBLEM_LENGTH = 160;
-const MAX_BUSINESS_SOLUTION_LENGTH = 240;
-const MAX_BUSINESS_TARGET_MARKET_LENGTH = 160;
-const MAX_BUSINESS_PRIMARY_OUTCOME_LENGTH = 240;
-const MAX_INTENT_TITLE_LENGTH = 100;
-const MAX_INTENT_DESCRIPTION_LENGTH = 300;
-const VALID_FREQUENCIES = ["daily", "weekly", "monthly", "irregular"];
-const VALID_CURRENCIES = ["USD", "GBP", "EUR", "CAD", "AUD", "CHF", "SGD", "INR", "PKR"];
-const VALID_TESTIMONIAL_DISPLAYS = ["homepage", "standalone"];
-const VALID_ACTION_METHODS = ["GET", "POST"];
-const VALID_LOCATION_PRECISIONS: Me3LocationPrecision[] = [
-  "locality",
-  "city",
-  "district",
-  "county",
-  "region",
-  "country",
-  "unknown",
-];
-const VALID_SERVICE_AVAILABILITY_MODES = [
-  "calendar",
-  "native",
-  "external",
-  "manual",
-];
-const VALID_SERVICE_STATUSES = ["active", "paused", "draft"];
+function fieldFromJsonPointer(path: string): string {
+  const segments = path
+    .split("/")
+    .slice(1)
+    .map((segment) => segment.replace(/~1/g, "/").replace(/~0/g, "~"));
 
-function validateOptionalLocationText(
-  record: Record<string, unknown>,
-  key: string,
-  field: string,
-  errors: ValidationError[],
-  maxLength = MAX_LOCATION_LENGTH,
-): void {
-  const value = record[key];
-  if (value === undefined) return;
-
-  if (typeof value !== "string") {
-    errors.push({ field, message: `${field} must be a string` });
-  } else if (value.length > maxLength) {
-    errors.push({
-      field,
-      message: `${field} must be ${maxLength} characters or less`,
-    });
-  }
-}
-
-function validateCoordinate(
-  value: unknown,
-  field: string,
-  min: number,
-  max: number,
-  errors: ValidationError[],
-): void {
-  if (typeof value !== "number" || !Number.isFinite(value)) {
-    errors.push({ field, message: `${field} must be a number` });
-  } else if (value < min || value > max) {
-    errors.push({ field, message: `${field} must be between ${min} and ${max}` });
-  }
-}
-
-function validateLocationData(
-  value: unknown,
-  errors: ValidationError[],
-): void {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    errors.push({
-      field: "locationData",
-      message: "Location data must be an object",
-    });
-    return;
-  }
-
-  const location = value as Record<string, unknown>;
-
-  if (!location.label || typeof location.label !== "string") {
-    errors.push({
-      field: "locationData.label",
-      message: "Location data label is required",
-    });
-  } else if (location.label.length > MAX_LOCATION_LENGTH) {
-    errors.push({
-      field: "locationData.label",
-      message: `Location data label must be ${MAX_LOCATION_LENGTH} characters or less`,
-    });
-  }
-
-  validateCoordinate(
-    location.latitude,
-    "locationData.latitude",
-    -90,
-    90,
-    errors,
+  return (
+    segments.reduce(
+      (field, segment) =>
+        /^\d+$/.test(segment)
+          ? `${field}[${segment}]`
+          : field
+            ? `${field}.${segment}`
+            : segment,
+      "",
+    ) || "root"
   );
-  validateCoordinate(
-    location.longitude,
-    "locationData.longitude",
-    -180,
-    180,
-    errors,
-  );
-
-  if (
-    typeof location.precision !== "string" ||
-    !VALID_LOCATION_PRECISIONS.includes(
-      location.precision as Me3LocationPrecision,
-    )
-  ) {
-    errors.push({
-      field: "locationData.precision",
-      message: `Location data precision must be one of: ${VALID_LOCATION_PRECISIONS.join(", ")}`,
-    });
-  }
-
-  validateOptionalLocationText(location, "locality", "locationData.locality", errors);
-  validateOptionalLocationText(location, "region", "locationData.region", errors);
-  validateOptionalLocationText(location, "country", "locationData.country", errors);
-
-  if (location.countryCode !== undefined) {
-    if (typeof location.countryCode !== "string") {
-      errors.push({
-        field: "locationData.countryCode",
-        message: "locationData.countryCode must be a string",
-      });
-    } else if (!/^[A-Z]{2}$/.test(location.countryCode)) {
-      errors.push({
-        field: "locationData.countryCode",
-        message: "locationData.countryCode must be an ISO 3166-1 alpha-2 code",
-      });
-    }
-  }
-
-  if (location.source !== undefined) {
-    if (
-      typeof location.source !== "object" ||
-      location.source === null ||
-      Array.isArray(location.source)
-    ) {
-      errors.push({
-        field: "locationData.source",
-        message: "Location data source must be an object",
-      });
-    } else {
-      const source = location.source as Record<string, unknown>;
-      if (!source.provider || typeof source.provider !== "string") {
-        errors.push({
-          field: "locationData.source.provider",
-          message: "Location data source provider is required",
-        });
-      } else if (source.provider.length > MAX_LOCATION_SOURCE_LENGTH) {
-        errors.push({
-          field: "locationData.source.provider",
-          message: `Location data source provider must be ${MAX_LOCATION_SOURCE_LENGTH} characters or less`,
-        });
-      }
-      validateOptionalLocationText(
-        source,
-        "id",
-        "locationData.source.id",
-        errors,
-        MAX_LOCATION_SOURCE_LENGTH,
-      );
-      validateOptionalLocationText(
-        source,
-        "osmType",
-        "locationData.source.osmType",
-        errors,
-        MAX_LOCATION_SOURCE_LENGTH,
-      );
-      validateOptionalLocationText(
-        source,
-        "osmKey",
-        "locationData.source.osmKey",
-        errors,
-        MAX_LOCATION_SOURCE_LENGTH,
-      );
-      validateOptionalLocationText(
-        source,
-        "osmValue",
-        "locationData.source.osmValue",
-        errors,
-        MAX_LOCATION_SOURCE_LENGTH,
-      );
-      if (
-        source.osmId !== undefined &&
-        typeof source.osmId !== "string" &&
-        typeof source.osmId !== "number"
-      ) {
-        errors.push({
-          field: "locationData.source.osmId",
-          message: "locationData.source.osmId must be a string or number",
-        });
-      }
-    }
-  }
 }
 
-/**
- * Validate a me3 profile object
- */
-export function validateProfile(data: unknown): ValidationResult {
+function semanticErrors(profile: Me3Profile): ValidationError[] {
   const errors: ValidationError[] = [];
+  const offeringIds = new Set<string>();
 
-  if (!data || typeof data !== "object") {
-    return {
-      valid: false,
-      errors: [{ field: "root", message: "Profile must be an object" }],
-    };
-  }
-
-  const profile = data as Record<string, unknown>;
-
-  // Version (required)
-  if (!profile.version || typeof profile.version !== "string") {
-    errors.push({ field: "version", message: "Version is required" });
-  } else if (profile.version !== CURRENT_VERSION) {
-    errors.push({
-      field: "version",
-      message: `Unsupported version. Expected ${CURRENT_VERSION}`,
+  for (const [collection, offerings] of [
+    ["services", profile.services || []],
+    ["products", profile.products || []],
+  ] as const) {
+    offerings.forEach((offering, index) => {
+      if (offeringIds.has(offering.id)) {
+        errors.push({
+          field: `${collection}[${index}].id`,
+          message: `Offering id must be unique: ${offering.id}`,
+        });
+      }
+      offeringIds.add(offering.id);
     });
   }
 
-  // Name (required)
-  if (!profile.name || typeof profile.name !== "string") {
-    errors.push({ field: "name", message: "Name is required" });
-  } else if (profile.name.length > MAX_NAME_LENGTH) {
-    errors.push({
-      field: "name",
-      message: `Name must be ${MAX_NAME_LENGTH} characters or less`,
-    });
-  }
-
-  // Handle (optional)
-  if (profile.handle !== undefined) {
-    if (typeof profile.handle !== "string") {
-      errors.push({ field: "handle", message: "Handle must be a string" });
-    } else if (profile.handle.length > MAX_HANDLE_LENGTH) {
+  const actions = profile.actions || {};
+  for (const [name, capability] of Object.entries(profile.capabilities || {})) {
+    if (!(capability.action in actions)) {
       errors.push({
-        field: "handle",
-        message: `Handle must be ${MAX_HANDLE_LENGTH} characters or less`,
-      });
-    } else if (!HANDLE_REGEX.test(profile.handle)) {
-      errors.push({
-        field: "handle",
-        message:
-          "Handle can only contain letters, numbers, underscores, and hyphens",
+        field: `capabilities.${name}.action`,
+        message: `Unknown action: ${capability.action}`,
       });
     }
-  }
 
-  // Location (optional)
-  if (profile.location !== undefined) {
-    if (typeof profile.location !== "string") {
-      errors.push({ field: "location", message: "Location must be a string" });
-    } else if (profile.location.length > MAX_LOCATION_LENGTH) {
-      errors.push({
-        field: "location",
-        message: `Location must be ${MAX_LOCATION_LENGTH} characters or less`,
-      });
-    }
-  }
-
-  // Structured public location data (optional)
-  if (profile.locationData !== undefined) {
-    validateLocationData(profile.locationData, errors);
-  }
-
-  // Bio (optional)
-  if (profile.bio !== undefined) {
-    if (typeof profile.bio !== "string") {
-      errors.push({ field: "bio", message: "Bio must be a string" });
-    } else if (profile.bio.length > MAX_BIO_LENGTH) {
-      errors.push({
-        field: "bio",
-        message: `Bio must be ${MAX_BIO_LENGTH} characters or less`,
-      });
-    }
-  }
-
-  // Avatar (optional)
-  if (profile.avatar !== undefined && typeof profile.avatar !== "string") {
-    errors.push({ field: "avatar", message: "Avatar must be a string URL" });
-  }
-
-  // Banner (optional)
-  if (profile.banner !== undefined && typeof profile.banner !== "string") {
-    errors.push({ field: "banner", message: "Banner must be a string URL" });
-  }
-
-  // Links (optional)
-  if (profile.links !== undefined) {
-    if (typeof profile.links !== "object" || profile.links === null) {
-      errors.push({ field: "links", message: "Links must be an object" });
-    }
-  }
-
-  // Business context (optional)
-  if (profile.business !== undefined) {
-    if (typeof profile.business !== "object" || profile.business === null || Array.isArray(profile.business)) {
-      errors.push({
-        field: "business",
-        message: "Business context must be an object",
-      });
-    } else {
-      const business = profile.business as Record<string, unknown>;
-
-      if (business.positioningStatement !== undefined) {
-        if (typeof business.positioningStatement !== "string") {
-          errors.push({
-            field: "business.positioningStatement",
-            message: "Business positioningStatement must be a string",
-          });
-        } else if (
-          business.positioningStatement.length >
-          MAX_BUSINESS_POSITIONING_STATEMENT_LENGTH
-        ) {
-          errors.push({
-            field: "business.positioningStatement",
-            message: `Business positioningStatement must be ${MAX_BUSINESS_POSITIONING_STATEMENT_LENGTH} characters or less`,
-          });
-        }
-      }
-
-      if (business.audience !== undefined) {
-        if (typeof business.audience !== "string") {
-          errors.push({
-            field: "business.audience",
-            message: "Business audience must be a string",
-          });
-        } else if (business.audience.length > MAX_BUSINESS_AUDIENCE_LENGTH) {
-          errors.push({
-            field: "business.audience",
-            message: `Business audience must be ${MAX_BUSINESS_AUDIENCE_LENGTH} characters or less`,
-          });
-        }
-      }
-
-      if (business.primaryProblem !== undefined) {
-        if (typeof business.primaryProblem !== "string") {
-          errors.push({
-            field: "business.primaryProblem",
-            message: "Business primaryProblem must be a string",
-          });
-        } else if (
-          business.primaryProblem.length > MAX_BUSINESS_PRIMARY_PROBLEM_LENGTH
-        ) {
-          errors.push({
-            field: "business.primaryProblem",
-            message: `Business primaryProblem must be ${MAX_BUSINESS_PRIMARY_PROBLEM_LENGTH} characters or less`,
-          });
-        }
-      }
-
-      if (business.solution !== undefined) {
-        if (typeof business.solution !== "string") {
-          errors.push({
-            field: "business.solution",
-            message: "Business solution must be a string",
-          });
-        } else if (business.solution.length > MAX_BUSINESS_SOLUTION_LENGTH) {
-          errors.push({
-            field: "business.solution",
-            message: `Business solution must be ${MAX_BUSINESS_SOLUTION_LENGTH} characters or less`,
-          });
-        }
-      }
-
-      if (business.primaryOutcome !== undefined) {
-        if (typeof business.primaryOutcome !== "string") {
-          errors.push({
-            field: "business.primaryOutcome",
-            message: "Business primaryOutcome must be a string",
-          });
-        } else if (business.primaryOutcome.length > MAX_BUSINESS_PRIMARY_OUTCOME_LENGTH) {
-          errors.push({
-            field: "business.primaryOutcome",
-            message: `Business primaryOutcome must be ${MAX_BUSINESS_PRIMARY_OUTCOME_LENGTH} characters or less`,
-          });
-        }
+    for (const offeringId of capability.offeringIds || []) {
+      if (!offeringIds.has(offeringId)) {
+        errors.push({
+          field: `capabilities.${name}.offeringIds`,
+          message: `Unknown offering: ${offeringId}`,
+        });
       }
     }
   }
 
-  // Buttons (optional)
-  if (profile.buttons !== undefined) {
-    if (!Array.isArray(profile.buttons)) {
-      errors.push({ field: "buttons", message: "Buttons must be an array" });
-    } else {
-      profile.buttons.forEach((button, index) => {
-        if (!button || typeof button !== "object") {
-          errors.push({
-            field: `buttons[${index}]`,
-            message: "Button must be an object",
-          });
-          return;
-        }
-        if (!button.text || typeof button.text !== "string") {
-          errors.push({
-            field: `buttons[${index}].text`,
-            message: "Button text is required",
-          });
-        } else if (button.text.length > MAX_BUTTON_TEXT_LENGTH) {
-          errors.push({
-            field: `buttons[${index}].text`,
-            message: `Button text must be ${MAX_BUTTON_TEXT_LENGTH} characters or less`,
-          });
-        }
-        if (!button.url || typeof button.url !== "string") {
-          errors.push({
-            field: `buttons[${index}].url`,
-            message: "Button URL is required",
-          });
-        } else if (!URL_REGEX.test(button.url)) {
-          errors.push({
-            field: `buttons[${index}].url`,
-            message:
-              "Button URL must be a valid URL starting with http:// or https://",
-          });
-        }
-        if (
-          button.style !== undefined &&
-          !VALID_BUTTON_STYLES.includes(button.style)
-        ) {
-          errors.push({
-            field: `buttons[${index}].style`,
-            message: `Button style must be one of: ${VALID_BUTTON_STYLES.join(", ")}`,
-          });
-        }
-        if (button.icon !== undefined && typeof button.icon !== "string") {
-          errors.push({
-            field: `buttons[${index}].icon`,
-            message: "Button icon must be a string",
-          });
-        }
-      });
-    }
-  }
-
-  // Footer (optional)
-  if (profile.footer !== undefined) {
-    if (profile.footer === false) {
-      // ok (renderer may enforce tier restrictions)
-    } else if (typeof profile.footer !== "object" || profile.footer === null) {
-      errors.push({
-        field: "footer",
-        message: "Footer must be an object or false",
-      });
-    } else {
-      const footer = profile.footer as Record<string, unknown>;
-
-      if (footer.text !== undefined) {
-        if (typeof footer.text !== "string") {
-          errors.push({
-            field: "footer.text",
-            message: "Footer text must be a string",
-          });
-        } else if (footer.text.length > MAX_FOOTER_TEXT_LENGTH) {
-          errors.push({
-            field: "footer.text",
-            message: `Footer text must be ${MAX_FOOTER_TEXT_LENGTH} characters or less`,
-          });
-        }
-      }
-
-      if (footer.link !== undefined) {
-        if (typeof footer.link !== "object" || footer.link === null) {
-          errors.push({
-            field: "footer.link",
-            message: "Footer link must be an object",
-          });
-        } else {
-          const link = footer.link as Record<string, unknown>;
-          if (!link.text || typeof link.text !== "string") {
-            errors.push({
-              field: "footer.link.text",
-              message: "Footer link text is required",
-            });
-          } else if (link.text.length > MAX_FOOTER_LINK_TEXT_LENGTH) {
-            errors.push({
-              field: "footer.link.text",
-              message: `Footer link text must be ${MAX_FOOTER_LINK_TEXT_LENGTH} characters or less`,
-            });
-          }
-
-          if (!link.url || typeof link.url !== "string") {
-            errors.push({
-              field: "footer.link.url",
-              message: "Footer link URL is required",
-            });
-          } else if (!URL_REGEX.test(link.url)) {
-            errors.push({
-              field: "footer.link.url",
-              message:
-                "Footer link URL must be a valid URL starting with http:// or https://",
-            });
-          }
-        }
-      }
-    }
-  }
-
-  // Pages (optional)
-  if (profile.pages !== undefined) {
-    if (!Array.isArray(profile.pages)) {
-      errors.push({ field: "pages", message: "Pages must be an array" });
-    } else {
-      profile.pages.forEach((page, index) => {
-        if (!page || typeof page !== "object") {
-          errors.push({
-            field: `pages[${index}]`,
-            message: "Page must be an object",
-          });
-          return;
-        }
-        if (!page.slug || typeof page.slug !== "string") {
-          errors.push({
-            field: `pages[${index}].slug`,
-            message: "Page slug is required",
-          });
-        }
-        if (!page.title || typeof page.title !== "string") {
-          errors.push({
-            field: `pages[${index}].title`,
-            message: "Page title is required",
-          });
-        }
-        if (!page.file || typeof page.file !== "string") {
-          errors.push({
-            field: `pages[${index}].file`,
-            message: "Page file is required",
-          });
-        }
-        if (typeof page.visible !== "boolean") {
-          errors.push({
-            field: `pages[${index}].visible`,
-            message: "Page visible must be a boolean",
-          });
-        }
-      });
-    }
-  }
-
-  // Posts (optional)
-  if ((profile as any).posts !== undefined) {
-    const posts = (profile as any).posts;
-    if (!Array.isArray(posts)) {
-      errors.push({ field: "posts", message: "Posts must be an array" });
-    } else {
-      const allowedPostTypes = new Set([
-        "article",
-        "note",
-        "video",
-        "audio",
-        "image",
-        "link",
-      ]);
-      posts.forEach((post: any, index: number) => {
-        if (!post || typeof post !== "object") {
-          errors.push({
-            field: `posts[${index}]`,
-            message: "Post must be an object",
-          });
-          return;
-        }
-        if (!post.slug || typeof post.slug !== "string") {
-          errors.push({
-            field: `posts[${index}].slug`,
-            message: "Post slug is required",
-          });
-        }
-        if (!post.title || typeof post.title !== "string") {
-          errors.push({
-            field: `posts[${index}].title`,
-            message: "Post title is required",
-          });
-        }
-        if (!post.file || typeof post.file !== "string") {
-          errors.push({
-            field: `posts[${index}].file`,
-            message: "Post file is required",
-          });
-        }
-        if (post.type !== undefined && typeof post.type !== "string") {
-          errors.push({
-            field: `posts[${index}].type`,
-            message: "Post type must be a string",
-          });
-        } else if (post.type && !allowedPostTypes.has(post.type)) {
-          errors.push({
-            field: `posts[${index}].type`,
-            message: "Post type is invalid",
-          });
-        }
-        if (post.media !== undefined) {
-          if (!post.media || typeof post.media !== "object") {
-            errors.push({
-              field: `posts[${index}].media`,
-              message: "Post media must be an object",
-            });
-          } else {
-            if (
-              post.media.url !== undefined &&
-              typeof post.media.url !== "string"
-            ) {
-              errors.push({
-                field: `posts[${index}].media.url`,
-                message: "Post media url must be a string",
-              });
-            }
-            if (
-              post.media.duration !== undefined &&
-              typeof post.media.duration !== "number"
-            ) {
-              errors.push({
-                field: `posts[${index}].media.duration`,
-                message: "Post media duration must be a number",
-              });
-            }
-            if (
-              post.media.thumbnail !== undefined &&
-              typeof post.media.thumbnail !== "string"
-            ) {
-              errors.push({
-                field: `posts[${index}].media.thumbnail`,
-                message: "Post media thumbnail must be a string",
-              });
-            }
-            if (
-              post.media.provider !== undefined &&
-              typeof post.media.provider !== "string"
-            ) {
-              errors.push({
-                field: `posts[${index}].media.provider`,
-                message: "Post media provider must be a string",
-              });
-            }
-            if (
-              post.media.id !== undefined &&
-              typeof post.media.id !== "string"
-            ) {
-              errors.push({
-                field: `posts[${index}].media.id`,
-                message: "Post media id must be a string",
-              });
-            }
-          }
-        }
-        if (
-          post.publishedAt !== undefined &&
-          typeof post.publishedAt !== "string"
-        ) {
-          errors.push({
-            field: `posts[${index}].publishedAt`,
-            message: "Post publishedAt must be a string",
-          });
-        }
-        if (post.excerpt !== undefined && typeof post.excerpt !== "string") {
-          errors.push({
-            field: `posts[${index}].excerpt`,
-            message: "Post excerpt must be a string",
-          });
-        }
-        if (
-          post.emailedAt !== undefined &&
-          typeof post.emailedAt !== "string"
-        ) {
-          errors.push({
-            field: `posts[${index}].emailedAt`,
-            message: "Post emailedAt must be a string",
-          });
-        }
-      });
-    }
-  }
-
-  // Products (optional)
-  if ((profile as any).products !== undefined) {
-    const products = (profile as any).products;
-    if (!Array.isArray(products)) {
-      errors.push({ field: "products", message: "Products must be an array" });
-    } else {
-      products.forEach((product: any, index: number) => {
-        if (!product || typeof product !== "object") {
-          errors.push({
-            field: `products[${index}]`,
-            message: "Product must be an object",
-          });
-          return;
-        }
-        if (!product.slug || typeof product.slug !== "string") {
-          errors.push({
-            field: `products[${index}].slug`,
-            message: "Product slug is required",
-          });
-        }
-        if (!product.title || typeof product.title !== "string") {
-          errors.push({
-            field: `products[${index}].title`,
-            message: "Product title is required",
-          });
-        }
-        if (!product.file || typeof product.file !== "string") {
-          errors.push({
-            field: `products[${index}].file`,
-            message: "Product file is required",
-          });
-        }
-        if (typeof product.price !== "number") {
-          errors.push({
-            field: `products[${index}].price`,
-            message: "Product price must be a number (in cents)",
-          });
-        }
-        if (
-          typeof product.currency !== "string" ||
-          !VALID_CURRENCIES.includes(product.currency)
-        ) {
-          errors.push({
-            field: `products[${index}].currency`,
-            message: `Product currency must be one of: ${VALID_CURRENCIES.join(", ")}`,
-          });
-        }
-        if (
-          product.available !== undefined &&
-          typeof product.available !== "boolean"
-        ) {
-          errors.push({
-            field: `products[${index}].available`,
-            message: "Product available must be a boolean",
-          });
-        }
-        if (product.images !== undefined) {
-          if (!Array.isArray(product.images)) {
-            errors.push({
-              field: `products[${index}].images`,
-              message: "Product images must be an array of strings",
-            });
-          } else if (
-            product.images.some((img: any) => typeof img !== "string")
-          ) {
-            errors.push({
-              field: `products[${index}].images`,
-              message: "Product images must be an array of strings",
-            });
-          }
-        }
-        if (
-          product.publishedAt !== undefined &&
-          typeof product.publishedAt !== "string"
-        ) {
-          errors.push({
-            field: `products[${index}].publishedAt`,
-            message: "Product publishedAt must be a string",
-          });
-        }
-        if (
-          product.excerpt !== undefined &&
-          typeof product.excerpt !== "string"
-        ) {
-          errors.push({
-            field: `products[${index}].excerpt`,
-            message: "Product excerpt must be a string",
-          });
-        }
-      });
-    }
-  }
-
-  // Services (optional)
-  if ((profile as any).services !== undefined) {
-    const services = (profile as any).services;
-    if (!Array.isArray(services)) {
-      errors.push({ field: "services", message: "Services must be an array" });
-    } else {
-      services.forEach((service: any, index: number) => {
-        if (!service || typeof service !== "object") {
-          errors.push({
-            field: `services[${index}]`,
-            message: "Service must be an object",
-          });
-          return;
-        }
-
-        if (!service.id || typeof service.id !== "string") {
-          errors.push({
-            field: `services[${index}].id`,
-            message: "Service id is required",
-          });
-        }
-
-        if (!service.title || typeof service.title !== "string") {
-          errors.push({
-            field: `services[${index}].title`,
-            message: "Service title is required",
-          });
-        } else if (service.title.length > MAX_INTENT_TITLE_LENGTH) {
-          errors.push({
-            field: `services[${index}].title`,
-            message: `Service title must be ${MAX_INTENT_TITLE_LENGTH} characters or less`,
-          });
-        }
-
-        if (service.description !== undefined) {
-          if (typeof service.description !== "string") {
-            errors.push({
-              field: `services[${index}].description`,
-              message: "Service description must be a string",
-            });
-          } else if (
-            service.description.length > MAX_INTENT_DESCRIPTION_LENGTH
-          ) {
-            errors.push({
-              field: `services[${index}].description`,
-              message: `Service description must be ${MAX_INTENT_DESCRIPTION_LENGTH} characters or less`,
-            });
-          }
-        }
-
-        if (
-          service.sessionType !== undefined &&
-          typeof service.sessionType !== "string"
-        ) {
-          errors.push({
-            field: `services[${index}].sessionType`,
-            message: "Service sessionType must be a string",
-          });
-        }
-
-        if (
-          service.duration !== undefined &&
-          (typeof service.duration !== "number" || service.duration <= 0)
-        ) {
-          errors.push({
-            field: `services[${index}].duration`,
-            message: "Service duration must be a positive number",
-          });
-        }
-
-        if (
-          service.price !== undefined &&
-          (typeof service.price !== "number" || service.price < 0)
-        ) {
-          errors.push({
-            field: `services[${index}].price`,
-            message: "Service price must be a non-negative number",
-          });
-        }
-
-        if (
-          service.currency !== undefined &&
-          (typeof service.currency !== "string" ||
-            !VALID_CURRENCIES.includes(service.currency))
-        ) {
-          errors.push({
-            field: `services[${index}].currency`,
-            message: `Service currency must be one of: ${VALID_CURRENCIES.join(", ")}`,
-          });
-        }
-
-        if (service.price !== undefined && service.currency === undefined) {
-          errors.push({
-            field: `services[${index}].currency`,
-            message: "Service currency is required when price is set",
-          });
-        }
-
-        if (service.whoItsFor !== undefined) {
-          if (
-            !Array.isArray(service.whoItsFor) ||
-            service.whoItsFor.some((value: any) => typeof value !== "string")
-          ) {
-            errors.push({
-              field: `services[${index}].whoItsFor`,
-              message: "Service whoItsFor must be an array of strings",
-            });
-          }
-        }
-
-        if (service.outcomes !== undefined) {
-          if (
-            !Array.isArray(service.outcomes) ||
-            service.outcomes.some((value: any) => typeof value !== "string")
-          ) {
-            errors.push({
-              field: `services[${index}].outcomes`,
-              message: "Service outcomes must be an array of strings",
-            });
-          }
-        }
-
-        if (
-          service.availabilityMode !== undefined &&
-          (typeof service.availabilityMode !== "string" ||
-            !VALID_SERVICE_AVAILABILITY_MODES.includes(
-              service.availabilityMode,
-            ))
-        ) {
-          errors.push({
-            field: `services[${index}].availabilityMode`,
-            message: `Service availabilityMode must be one of: ${VALID_SERVICE_AVAILABILITY_MODES.join(", ")}`,
-          });
-        }
-
-        if (
-          service.status !== undefined &&
-          (typeof service.status !== "string" ||
-            !VALID_SERVICE_STATUSES.includes(service.status))
-        ) {
-          errors.push({
-            field: `services[${index}].status`,
-            message: `Service status must be one of: ${VALID_SERVICE_STATUSES.join(", ")}`,
-          });
-        }
-      });
-    }
-  }
-
-  // Actions (optional)
-  if ((profile as any).actions !== undefined) {
-    const actions = (profile as any).actions;
-    if (typeof actions !== "object" || actions === null || Array.isArray(actions)) {
-      errors.push({ field: "actions", message: "Actions must be an object" });
-    } else {
-      for (const [name, action] of Object.entries(actions)) {
-        if (!action || typeof action !== "object") {
-          errors.push({
-            field: `actions.${name}`,
-            message: "Action must be an object",
-          });
-          continue;
-        }
-
-        const actionRecord = action as Record<string, unknown>;
-
-        if (
-          typeof actionRecord.method !== "string" ||
-          !VALID_ACTION_METHODS.includes(actionRecord.method)
-        ) {
-          errors.push({
-            field: `actions.${name}.method`,
-            message: `Action method must be one of: ${VALID_ACTION_METHODS.join(", ")}`,
-          });
-        }
-
-        if (!actionRecord.url || typeof actionRecord.url !== "string") {
-          errors.push({
-            field: `actions.${name}.url`,
-            message: "Action url is required",
-          });
-        } else if (!URL_REGEX.test(actionRecord.url)) {
-          errors.push({
-            field: `actions.${name}.url`,
-            message:
-              "Action url must be a valid URL starting with http:// or https://",
-          });
-        }
-
-        if (actionRecord.requires !== undefined) {
-          if (
-            !Array.isArray(actionRecord.requires) ||
-            actionRecord.requires.some((value) => typeof value !== "string")
-          ) {
-            errors.push({
-              field: `actions.${name}.requires`,
-              message: "Action requires must be an array of strings",
-            });
-          }
-        }
-
-        if (actionRecord.description !== undefined) {
-          if (typeof actionRecord.description !== "string") {
-            errors.push({
-              field: `actions.${name}.description`,
-              message: "Action description must be a string",
-            });
-          } else if (
-            actionRecord.description.length > MAX_INTENT_DESCRIPTION_LENGTH
-          ) {
-            errors.push({
-              field: `actions.${name}.description`,
-              message: `Action description must be ${MAX_INTENT_DESCRIPTION_LENGTH} characters or less`,
-            });
-          }
-        }
-      }
-    }
-  }
-
-  // Testimonials (optional)
-  if ((profile as any).testimonials !== undefined) {
-    const testimonials = (profile as any).testimonials;
-    if (!Array.isArray(testimonials)) {
-      errors.push({
-        field: "testimonials",
-        message: "Testimonials must be an array",
-      });
-    } else {
-      testimonials.forEach((testimonial: any, index: number) => {
-        if (!testimonial || typeof testimonial !== "object") {
-          errors.push({
-            field: `testimonials[${index}]`,
-            message: "Testimonial must be an object",
-          });
-          return;
-        }
-        if (!testimonial.name || typeof testimonial.name !== "string") {
-          errors.push({
-            field: `testimonials[${index}].name`,
-            message: "Testimonial name is required",
-          });
-        }
-        if (!testimonial.quote || typeof testimonial.quote !== "string") {
-          errors.push({
-            field: `testimonials[${index}].quote`,
-            message: "Testimonial quote is required",
-          });
-        }
-        if (
-          testimonial.handle !== undefined &&
-          typeof testimonial.handle !== "string"
-        ) {
-          errors.push({
-            field: `testimonials[${index}].handle`,
-            message: "Testimonial handle must be a string",
-          });
-        }
-        if (
-          testimonial.avatar !== undefined &&
-          typeof testimonial.avatar !== "string"
-        ) {
-          errors.push({
-            field: `testimonials[${index}].avatar`,
-            message: "Testimonial avatar must be a string",
-          });
-        }
-        if (
-          testimonial.profileUrl !== undefined &&
-          typeof testimonial.profileUrl !== "string"
-        ) {
-          errors.push({
-            field: `testimonials[${index}].profileUrl`,
-            message: "Testimonial profileUrl must be a string",
-          });
-        }
-      });
-    }
-  }
-
-  // Testimonial display (optional)
-  if ((profile as any).testimonialDisplay !== undefined) {
-    const display = (profile as any).testimonialDisplay;
-    if (typeof display !== "string") {
-      errors.push({
-        field: "testimonialDisplay",
-        message: "Testimonial display must be a string",
-      });
-    } else if (!VALID_TESTIMONIAL_DISPLAYS.includes(display)) {
-      errors.push({
-        field: "testimonialDisplay",
-        message: `Testimonial display must be one of: ${VALID_TESTIMONIAL_DISPLAYS.join(", ")}`,
-      });
-    }
-  }
-
-  // Testimonials title (optional)
-  if ((profile as any).testimonialsTitle !== undefined) {
-    const title = (profile as any).testimonialsTitle;
-    if (typeof title !== "string") {
-      errors.push({
-        field: "testimonialsTitle",
-        message: "Testimonials title must be a string",
-      });
-    }
-  }
-
-  // Intents (optional)
-  if (profile.intents !== undefined) {
-    if (typeof profile.intents !== "object" || profile.intents === null) {
-      errors.push({ field: "intents", message: "Intents must be an object" });
-    } else {
-      const intents = profile.intents as Record<string, unknown>;
-
-      // Validate subscribe intent
-      if (intents.subscribe !== undefined) {
-        if (
-          typeof intents.subscribe !== "object" ||
-          intents.subscribe === null
-        ) {
-          errors.push({
-            field: "intents.subscribe",
-            message: "Subscribe intent must be an object",
-          });
-        } else {
-          const subscribe = intents.subscribe as Record<string, unknown>;
-
-          if (typeof subscribe.enabled !== "boolean") {
-            errors.push({
-              field: "intents.subscribe.enabled",
-              message: "Subscribe enabled must be a boolean",
-            });
-          }
-
-          if (subscribe.title !== undefined) {
-            if (typeof subscribe.title !== "string") {
-              errors.push({
-                field: "intents.subscribe.title",
-                message: "Subscribe title must be a string",
-              });
-            } else if (subscribe.title.length > MAX_INTENT_TITLE_LENGTH) {
-              errors.push({
-                field: "intents.subscribe.title",
-                message: `Subscribe title must be ${MAX_INTENT_TITLE_LENGTH} characters or less`,
-              });
-            }
-          }
-
-          if (subscribe.description !== undefined) {
-            if (typeof subscribe.description !== "string") {
-              errors.push({
-                field: "intents.subscribe.description",
-                message: "Subscribe description must be a string",
-              });
-            } else if (
-              subscribe.description.length > MAX_INTENT_DESCRIPTION_LENGTH
-            ) {
-              errors.push({
-                field: "intents.subscribe.description",
-                message: `Subscribe description must be ${MAX_INTENT_DESCRIPTION_LENGTH} characters or less`,
-              });
-            }
-          }
-
-          if (
-            subscribe.frequency !== undefined &&
-            !VALID_FREQUENCIES.includes(subscribe.frequency as string)
-          ) {
-            errors.push({
-              field: "intents.subscribe.frequency",
-              message: `Subscribe frequency must be one of: ${VALID_FREQUENCIES.join(", ")}`,
-            });
-          }
-        }
-      }
-
-      // Validate book intent
-      if (intents.book !== undefined) {
-        if (typeof intents.book !== "object" || intents.book === null) {
-          errors.push({
-            field: "intents.book",
-            message: "Book intent must be an object",
-          });
-        } else {
-          const book = intents.book as Record<string, unknown>;
-
-          if (typeof book.enabled !== "boolean") {
-            errors.push({
-              field: "intents.book.enabled",
-              message: "Book enabled must be a boolean",
-            });
-          }
-
-          if (book.title !== undefined) {
-            if (typeof book.title !== "string") {
-              errors.push({
-                field: "intents.book.title",
-                message: "Book title must be a string",
-              });
-            } else if (book.title.length > MAX_INTENT_TITLE_LENGTH) {
-              errors.push({
-                field: "intents.book.title",
-                message: `Book title must be ${MAX_INTENT_TITLE_LENGTH} characters or less`,
-              });
-            }
-          }
-
-          if (book.description !== undefined) {
-            if (typeof book.description !== "string") {
-              errors.push({
-                field: "intents.book.description",
-                message: "Book description must be a string",
-              });
-            } else if (
-              book.description.length > MAX_INTENT_DESCRIPTION_LENGTH
-            ) {
-              errors.push({
-                field: "intents.book.description",
-                message: `Book description must be ${MAX_INTENT_DESCRIPTION_LENGTH} characters or less`,
-              });
-            }
-          }
-
-          if (
-            book.duration !== undefined &&
-            typeof book.duration !== "number"
-          ) {
-            errors.push({
-              field: "intents.book.duration",
-              message: "Book duration must be a number (minutes)",
-            });
-          }
-
-          if (
-            book.provider !== undefined &&
-            typeof book.provider !== "string"
-          ) {
-            errors.push({
-              field: "intents.book.provider",
-              message: "Book provider must be a string",
-            });
-          }
-
-          // URL is optional if availability is set (native me3 booking)
-          if (book.url !== undefined) {
-            if (typeof book.url !== "string") {
-              errors.push({
-                field: "intents.book.url",
-                message: "Book URL must be a string",
-              });
-            } else if (!URL_REGEX.test(book.url as string)) {
-              errors.push({
-                field: "intents.book.url",
-                message:
-                  "Book URL must be a valid URL starting with http:// or https://",
-              });
-            }
-          }
-
-          // Validate availability if present
-          if (book.availability !== undefined) {
-            if (
-              typeof book.availability !== "object" ||
-              book.availability === null
-            ) {
-              errors.push({
-                field: "intents.book.availability",
-                message: "Book availability must be an object",
-              });
-            } else {
-              const availability = book.availability as Record<string, unknown>;
-
-              if (
-                !availability.timezone ||
-                typeof availability.timezone !== "string"
-              ) {
-                errors.push({
-                  field: "intents.book.availability.timezone",
-                  message: "Availability timezone is required",
-                });
-              }
-
-              if (availability.windows !== undefined) {
-                if (
-                  typeof availability.windows !== "object" ||
-                  availability.windows === null
-                ) {
-                  errors.push({
-                    field: "intents.book.availability.windows",
-                    message: "Availability windows must be an object",
-                  });
-                } else {
-                  const windows = availability.windows as Record<
-                    string,
-                    unknown
-                  >;
-                  const validDays = [
-                    "monday",
-                    "tuesday",
-                    "wednesday",
-                    "thursday",
-                    "friday",
-                    "saturday",
-                    "sunday",
-                  ];
-                  const timeWindowRegex = /^\d{2}:\d{2}-\d{2}:\d{2}$/;
-
-                  for (const [day, value] of Object.entries(windows)) {
-                    if (!validDays.includes(day)) {
-                      errors.push({
-                        field: `intents.book.availability.windows.${day}`,
-                        message: `Invalid day: ${day}`,
-                      });
-                      continue;
-                    }
-
-                    if (!Array.isArray(value)) {
-                      errors.push({
-                        field: `intents.book.availability.windows.${day}`,
-                        message: `Windows for ${day} must be an array`,
-                      });
-                      continue;
-                    }
-
-                    for (const window of value) {
-                      if (
-                        typeof window !== "string" ||
-                        !timeWindowRegex.test(window)
-                      ) {
-                        errors.push({
-                          field: `intents.book.availability.windows.${day}`,
-                          message: `Invalid time window format. Use HH:MM-HH:MM`,
-                        });
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-
-          // Either URL or availability must be set for booking to work
-          if (!book.url && !book.availability) {
-            errors.push({
-              field: "intents.book",
-              message:
-                "Book intent requires either a URL (for external booking) or availability (for native booking)",
-            });
-          }
-
-          // Validate pricing if present
-          if (book.pricing !== undefined) {
-            if (typeof book.pricing !== "object" || book.pricing === null) {
-              errors.push({
-                field: "intents.book.pricing",
-                message: "Book pricing must be an object",
-              });
-            } else {
-              const pricing = book.pricing as Record<string, unknown>;
-
-              if (typeof pricing.enabled !== "boolean") {
-                errors.push({
-                  field: "intents.book.pricing.enabled",
-                  message: "Pricing enabled must be a boolean",
-                });
-              }
-
-              if (pricing.enabled) {
-                if (typeof pricing.suggestedAmount !== "number") {
-                  errors.push({
-                    field: "intents.book.pricing.suggestedAmount",
-                    message: "Suggested amount must be a number",
-                  });
-                } else if (pricing.suggestedAmount < 5) {
-                  errors.push({
-                    field: "intents.book.pricing.suggestedAmount",
-                    message: "Suggested amount must be at least $5",
-                  });
-                }
-
-                if (
-                  typeof pricing.currency !== "string" ||
-                  !VALID_CURRENCIES.includes(pricing.currency)
-                ) {
-                  errors.push({
-                    field: "intents.book.pricing.currency",
-                    message: `Currency must be one of: ${VALID_CURRENCIES.join(", ")}`,
-                  });
-                }
-
-                if (pricing.minimumAmount !== 5) {
-                  errors.push({
-                    field: "intents.book.pricing.minimumAmount",
-                    message: "Minimum amount must be 5",
-                  });
-                }
-
-                if (typeof pricing.allowFree !== "boolean") {
-                  errors.push({
-                    field: "intents.book.pricing.allowFree",
-                    message: "Allow free must be a boolean",
-                  });
-                }
-              }
-            }
-          }
-        }
-      }
-
-      // Validate shop intent
-      if (intents.shop !== undefined) {
-        if (typeof intents.shop !== "object" || intents.shop === null) {
-          errors.push({
-            field: "intents.shop",
-            message: "Shop intent must be an object",
-          });
-        } else {
-          const shop = intents.shop as Record<string, unknown>;
-
-          if (typeof shop.enabled !== "boolean") {
-            errors.push({
-              field: "intents.shop.enabled",
-              message: "Shop enabled must be a boolean",
-            });
-          }
-
-          if (shop.title !== undefined) {
-            if (typeof shop.title !== "string") {
-              errors.push({
-                field: "intents.shop.title",
-                message: "Shop title must be a string",
-              });
-            } else if (shop.title.length > MAX_INTENT_TITLE_LENGTH) {
-              errors.push({
-                field: "intents.shop.title",
-                message: `Shop title must be ${MAX_INTENT_TITLE_LENGTH} characters or less`,
-              });
-            }
-          }
-
-          if (shop.description !== undefined) {
-            if (typeof shop.description !== "string") {
-              errors.push({
-                field: "intents.shop.description",
-                message: "Shop description must be a string",
-              });
-            } else if (
-              shop.description.length > MAX_INTENT_DESCRIPTION_LENGTH
-            ) {
-              errors.push({
-                field: "intents.shop.description",
-                message: `Shop description must be ${MAX_INTENT_DESCRIPTION_LENGTH} characters or less`,
-              });
-            }
-          }
-
-          if (
-            typeof shop.currency !== "string" ||
-            !VALID_CURRENCIES.includes(shop.currency)
-          ) {
-            errors.push({
-              field: "intents.shop.currency",
-              message: `Shop currency must be one of: ${VALID_CURRENCIES.join(", ")}`,
-            });
-          }
-        }
-      }
-    }
-  }
-
-  if (errors.length > 0) {
-    return { valid: false, errors };
-  }
-
-  return {
-    valid: true,
-    errors: [],
-    profile: profile as unknown as Me3Profile,
-  };
+  return errors;
 }
 
-/**
- * Parse and validate a me.json string
- */
+export function validateProfile(data: unknown): ValidationResult {
+  const errors = Array.from(Value.Errors(Me3ProfileSchema, data), (error) => ({
+    field: fieldFromJsonPointer(error.path),
+    message: error.message,
+  }));
+
+  if (errors.length > 0) return { valid: false, errors };
+
+  const profile = data as Me3Profile;
+  const references = semanticErrors(profile);
+  if (references.length > 0) return { valid: false, errors: references };
+
+  return { valid: true, errors: [], profile };
+}
+
 export function parseMe3Json(jsonString: string): ValidationResult {
   try {
-    const data = JSON.parse(jsonString);
-    return validateProfile(data);
-  } catch (e) {
+    return validateProfile(JSON.parse(jsonString));
+  } catch {
     return {
       valid: false,
       errors: [{ field: "root", message: "Invalid JSON" }],
     };
   }
 }
-
-export const ME3_VERSION = CURRENT_VERSION;
-export const ME3_FILENAME = "me.json";

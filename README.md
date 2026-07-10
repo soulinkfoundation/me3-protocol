@@ -1,227 +1,182 @@
-# me3 Protocol (me.json)
+# me3 Protocol (`me.json`)
 
-**The place machines check before acting on a person.**
+**A portable public profile and capability index for people, organizations, applications, and agents.**
 
-`me.json` is a minimal protocol that lets you declare what actions AI agents and services can take on your behalf—and how.
+`me.json` gives humans and machines an authoritative public description of a subject: who they are, what they publish or offer, and where supported interactions begin.
 
-## The Problem
+It is discovery data. It is not authentication, authorization, delegation, private memory, account state, installation configuration, or proof that a claim is true.
 
-Machines are already making decisions about people:
-
-- "Should I book a meeting with this person?"
-- "Can I subscribe them to updates?"
-- "How should I introduce them?"
-
-Without an authoritative source, they guess. They scrape. They get it wrong.
-
-Schema.org describes _pages_. `me.json` declares _people_—their identity, their preferences, and their **intents**.
-
-## The Solution: Intents, Services, and Actions
-
-The core of `me.json` is a machine-readable contract:
-
-- `intents` declare what is possible
-- `services` describe the offers a person provides
-- `actions` make invocation explicit for agents
-
-Example:
+## Example
 
 ```json
 {
-  "version": "0.1",
+  "$schema": "https://unpkg.com/me3-protocol@3.0.0/schema.json",
+  "version": "0.2",
+  "kind": "person",
+  "id": "https://janedoe.example/me.json",
+  "url": "https://janedoe.example/",
   "name": "Jane Doe",
-  "bio": "Creative Director at Studio X",
-  "business": {
-    "positioningStatement": "I help early-stage founders with unclear positioning by turning their expertise into a sharper offer.",
-    "audience": "early-stage founders",
-    "primaryProblem": "unclear positioning",
-    "solution": "turning their expertise into a sharper offer",
-    "targetMarket": "early-stage founders",
-    "primaryOutcome": "clarity on the offer and next step"
-  },
+  "bio": "Independent consultant helping teams explain complex products clearly.",
+  "links": [
+    {
+      "rel": "website",
+      "href": "https://janedoe.example/"
+    }
+  ],
   "services": [
     {
       "id": "discovery-call",
       "title": "Discovery Call",
-      "description": "A first conversation to explore fit.",
-      "sessionType": "1:1",
-      "duration": 30,
-      "price": 0,
-      "currency": "EUR",
-      "whoItsFor": ["founders", "coaches"],
-      "outcomes": ["clarity", "next steps"],
-      "availabilityMode": "calendar",
+      "durationMinutes": 30,
+      "price": {
+        "amount": "0.00",
+        "currency": "EUR"
+      },
       "status": "active"
     }
   ],
-  "intents": {
-    "subscribe": {
-      "enabled": true,
-      "title": "Design Weekly",
-      "description": "Curated design links every Sunday",
-      "frequency": "weekly"
-    },
+  "actions": {
     "book": {
-      "enabled": true,
-      "title": "30-min Consultation",
-      "description": "Let's discuss your project",
-      "duration": 30,
-      "url": "https://cal.com/janedoe"
+      "type": "link",
+      "url": "https://janedoe.example/book"
     }
   },
-  "actions": {
-    "subscribe": {
-      "method": "POST",
-      "url": "https://api.example.com/subscribe",
-      "requires": ["email"]
-    },
-    "checkAvailability": {
-      "method": "GET",
-      "url": "https://api.example.com/book/janedoe/slots{?date}",
-      "requires": ["date"]
+  "capabilities": {
+    "book": {
+      "action": "book",
+      "offeringIds": ["discovery-call"]
     }
   }
 }
 ```
 
-**Without `me.json`**: An AI asked "Can I book a call with Jane?" has to guess, scrape her site, or fail.
+See [`examples/full.json`](./examples/full.json) for every protocol area.
 
-**With `me.json`**: The AI reads `intents.book`, sees the relevant `services`, and can use `actions.checkAvailability` or `actions.subscribe` directly.
+## Contract
 
-That's the protocol's value: **authority before action**.
-
-## Supported Intents
-
-| Intent      | Purpose                      | Key Fields                                           |
-| :---------- | :--------------------------- | :--------------------------------------------------- |
-| `subscribe` | Newsletter/updates signup    | `enabled`, `title`, `description`, `frequency`       |
-| `book`      | Meeting/consultation booking | `enabled`, `title`, `description`, `url`, `duration` |
-
-More intents (like `contact` for routing preferences) are planned.
-
-## Structured Services
-
-`services` helps agents explain fit before taking action.
+The required fields are:
 
 | Field | Purpose |
-| :---- | :------ |
-| `id` | Stable identifier for the service |
-| `title` | Human-facing service name |
-| `description` | Short summary of the offer |
-| `sessionType` | Delivery type such as `1:1` or `group` |
-| `duration` | Session length in minutes |
-| `price` / `currency` | Pricing metadata |
-| `whoItsFor` | Audience descriptors |
-| `outcomes` | Expected benefits or next steps |
-| `availabilityMode` | How availability is managed |
-| `status` | Whether the service is currently active |
+| --- | --- |
+| `version` | Protocol compatibility version; currently `0.2`. |
+| `kind` | `person`, `organization`, `application`, or `agent`. |
+| `name` | Public display name. |
 
-## Business Context
+The optional public areas are:
 
-`business` gives agents a compact, explicit summary of the offer they should understand before they act.
+| Area | Purpose |
+| --- | --- |
+| `id`, `url`, `handle`, `bio`, `avatar`, `banner` | Identity and presentation. |
+| `location`, `locationData` | Deliberately approximate public location. |
+| `links` | Explicit HTTPS, email, and telephone links. |
+| `pages`, `posts` | Published content references. |
+| `business` | Compact public positioning context. |
+| `services`, `products` | Public offerings with stable IDs. |
+| `actions` | Human links or operations in a public OpenAPI document. |
+| `capabilities` | Named interactions that reference actions and offerings. |
+| `extensions` | Namespaced experimental public data. |
 
-| Field | Purpose |
-| :---- | :------ |
-| `positioningStatement` | Canonical offer sentence agents should use as source context |
-| `audience` | Human-facing description of the ideal client or audience |
-| `primaryProblem` | Core pain point, blocker, or job-to-be-done |
-| `solution` | How the offer helps or what it provides |
-| `targetMarket` | Tight target-market label for routing and positioning |
-| `primaryOutcome` | Main progress the buyer is hiring the offer to create |
+Objects are strict: unknown fields are invalid everywhere except inside `extensions`. Extension keys use an owner namespace such as `example.com/presentation`.
 
-## Explicit Actions
+## Money
 
-`actions` lets a profile describe exactly how an agent should invoke something.
+All prices use one representation:
 
-| Field | Purpose |
-| :---- | :------ |
-| `method` | HTTP method such as `GET` or `POST` |
-| `url` | Endpoint URL |
-| `requires` | Fields an agent must gather before calling |
-| `description` | Human-readable action summary |
-
----
-
-## Full Schema
-
-Beyond intents, `me.json` includes identity and presentation fields:
-
-| Field      | Type     | Required | Description                                          |
-| :--------- | :------- | :------- | :--------------------------------------------------- |
-| `version`  | `string` | **Yes**  | Protocol version (currently `"0.1"`).                |
-| `name`     | `string` | **Yes**  | Display name.                                        |
-| `handle`   | `string` | No       | Preferred username/handle.                           |
-| `bio`      | `string` | No       | Short bio (max 500 chars).                           |
-| `avatar`   | `string` | No       | Profile picture URL.                                 |
-| `banner`   | `string` | No       | Header/banner image URL.                             |
-| `location` | `string` | No       | Public display location (e.g., "Berlin" or "Remote"). |
-| `locationData` | `object` | No | Approximate public place data for local discovery; stores town/city-level coordinates, precision, country code, and lookup source metadata. |
-| `links`    | `object` | No       | Social links (`website`, `github`, `twitter`, etc.). |
-| `buttons`  | `array`  | No       | Call-to-action buttons for human visitors. Add as many as you need. |
-| `pages`    | `array`  | No       | Custom content pages (markdown).                     |
-| `business` | `object` | No       | Compact site/business context for agents.             |
-| `services` | `array`  | No       | Structured services or offerings for agents.         |
-| `intents`  | `object` | No       | Machine-actionable declarations (see above).         |
-| `actions`  | `object` | No       | Explicit action descriptors for agents.              |
-| `footer`   | `object` | No       | Footer config (or `false` to hide).                  |
-
-See [`examples/full.json`](./examples/full.json) for a complete example.
-
----
-
-## Hosting & Discovery
-
-Your `me.json` must be publicly accessible at:
-
-1. **Primary**: `https://yourdomain.com/me.json`
-2. **Fallback**: `https://yourdomain.com/.well-known/me`
-
-### Requirements
-
-- **HTTPS only**
-- **CORS enabled**: Serve with `Access-Control-Allow-Origin: *` so browser-based agents can read it
-- **Content-Type**: `application/json`
-
----
-
-## What me.json is NOT
-
-- **NOT authentication** — This is public data. No logins, no private keys.
-- **NOT a social network** — No feeds, no likes, no central server.
-- **NOT a platform** — Host it anywhere: GitHub Pages, Vercel, your own server.
-- **NOT reputation** — No scores, rankings, or verification.
-
----
-
-## Usage
-
-### Install
-
-```bash
-npm install me3-protocol
-```
-
-### Validate
-
-```typescript
-import { validateProfile, parseMe3Json } from "me3-protocol";
-
-const result = validateProfile(profileData);
-
-if (!result.valid) {
-  console.error(result.errors);
+```json
+{
+  "amount": "50.00",
+  "currency": "EUR"
 }
 ```
 
-### JSON Schema
+`amount` is a non-negative decimal string in major currency units. `currency` is a three-letter ISO 4217 code. Product policies such as minimum charges, flexible pricing, payment providers, and checkout state are not protocol data.
 
-A standard JSON Schema is available at [`schema.json`](./schema.json).
+## Capabilities and actions
 
----
+A capability says an interaction is publicly offered. It references:
+
+- an entry in `actions`; and
+- optionally, stable IDs from `services` or `products`.
+
+Actions have only two forms:
+
+- `link`: an HTTPS flow intended for a person;
+- `openapi`: an `operationId` in a public HTTPS OpenAPI document.
+
+`me.json` never grants permission to invoke an operation. Consumers must still apply authentication, authorization, consent, confirmation, and side-effect policies from the action API and their own runtime.
+
+## Public boundary
+
+Good protocol data includes public identity, public content, public offerings, and public interaction entry points.
+
+Do not publish:
+
+- secrets, tokens, credentials, or private keys;
+- private assistant memory, messages, contacts, tasks, or calendars;
+- drafts or unpublished content;
+- reminder settings, email templates, or delivery configuration;
+- account, installation, billing, provider, or plugin state;
+- payment customer/session identifiers or purchase records;
+- self-asserted verification flags.
+
+Hosting a document over HTTPS establishes control of that origin. It does not prove every claim in the document. Trust and attestations belong in separate systems.
+
+## Location privacy
+
+`locationData` is for opt-in local discovery. Coordinates must identify an approximate public place such as a locality, city, region, or country—never a home, workplace, or street address. `placeId` may hold a namespaced public identifier such as `osm:relation:62273`; lookup-provider internals do not belong in the document.
+
+## Hosting and discovery
+
+Serve the same document at:
+
+1. `https://yourdomain.com/me.json`
+2. `https://yourdomain.com/.well-known/me.json`
+
+Responses must use:
+
+- HTTPS;
+- `Content-Type: application/json`;
+- `Access-Control-Allow-Origin: *` so browser-based consumers can read public data without credentials.
+
+Sites may also advertise `/me.json` with an HTTP `Link` header and an HTML `<link rel="alternate" type="application/json">` element.
+
+Consumers should apply response-size limits, short timeouts, safe redirect handling, and SSRF protection when resolving user-supplied domains. Fetching a profile must never automatically invoke an advertised action.
+
+## Install and validate
+
+```bash
+npm install me3-protocol@^3
+```
+
+```typescript
+import { parseMe3Json, validateProfile } from "me3-protocol";
+
+const objectResult = validateProfile(value);
+const stringResult = parseMe3Json(jsonString);
+
+if (!objectResult.valid) {
+  console.error(objectResult.errors);
+}
+```
+
+The package exports the inferred TypeScript types, runtime schemas, validators, and constants. [`schema.json`](./schema.json) is generated from the same runtime schema used by `validateProfile`.
 
 ## Versioning
 
-- **Current version**: `0.1`
-- The protocol version describes `me.json` compatibility. It is independent from the npm package release version.
-- **Stability**: Additive changes only. Breaking changes require a version bump.
-- **Extensions**: Use `business` for site/business context and `links` for lightweight presentation extensions.
+The document protocol version and npm package version are independent:
+
+- protocol `0.2` describes document compatibility;
+- npm `3.0.0` marks the breaking TypeScript and validator release.
+
+Readers migrating existing installations should temporarily support both `0.1` and `0.2`, while new publishers should emit only `0.2`.
+
+### Migrating from `0.1`
+
+- Add `kind`; optionally add stable `id` and canonical `url`.
+- Convert `links` from a provider-value object to `{ rel, href }[]` with explicit URIs.
+- Convert pages, posts, products, and media from `slug`/`file` fields to stable `id` and public `url` fields.
+- Convert every price to `{ amount, currency }` using major currency units.
+- Replace `intents` with `capabilities`.
+- Replace HTTP `method`/`requires` actions with human `link` actions or `openapi` operation references.
+- Remove verification, footer/display controls, draft state, reminders, email templates, and other runtime configuration.
+- Move genuinely public experimental fields into a namespaced `extensions` entry.

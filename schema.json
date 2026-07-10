@@ -1,963 +1,694 @@
 {
-  "$ref": "#/definitions/Me3Profile",
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "definitions": {
-    "Me3ActionDefinition": {
-      "additionalProperties": false,
-      "description": "Explicit action descriptors that agents can invoke. These make the protocol self-describing without requiring knowledge of ME3 conventions.",
-      "properties": {
-        "description": {
-          "description": "Human-readable description of what the action does",
-          "type": "string"
-        },
-        "method": {
-          "$ref": "#/definitions/Me3ActionMethod",
-          "description": "HTTP method to use"
-        },
-        "requires": {
-          "description": "Required input fields an agent must collect before invoking",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "url": {
-          "description": "Action endpoint URL",
-          "type": "string"
-        }
-      },
-      "required": [
-        "method",
-        "url"
-      ],
-      "type": "object"
-    },
-    "Me3ActionMethod": {
-      "enum": [
-        "GET",
-        "POST"
-      ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:me3:protocol:0.2",
+  "title": "me3 Protocol Profile 0.2",
+  "description": "A portable public identity, content, offering, and capability manifest.",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "version",
+    "kind",
+    "name"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://unpkg.com/me3-protocol@3.0.0/schema.json",
       "type": "string"
     },
-    "Me3BookingAvailability": {
-      "additionalProperties": false,
-      "description": "Availability windows for booking. Defines when the person is available for meetings.",
-      "properties": {
-        "timezone": {
-          "description": "Timezone for the availability windows (e.g., \"America/New_York\")",
-          "type": "string"
-        },
-        "windows": {
-          "additionalProperties": false,
-          "description": "Weekly availability windows by day",
-          "properties": {
-            "friday": {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            "monday": {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            "saturday": {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            "sunday": {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            "thursday": {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            "tuesday": {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            "wednesday": {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            }
-          },
-          "type": "object"
-        }
-      },
-      "required": [
-        "timezone",
-        "windows"
-      ],
-      "type": "object"
+    "version": {
+      "const": "0.2",
+      "type": "string"
     },
-    "Me3BookingPricing": {
-      "additionalProperties": false,
-      "description": "Booking pricing configuration. Allows hosts to charge for meetings with a sliding scale pay-what-you-want model.",
-      "properties": {
-        "allowFree": {
-          "description": "Whether to allow free meetings alongside paid ones",
-          "type": "boolean"
-        },
-        "currency": {
-          "description": "Currency code",
-          "enum": [
-            "USD",
-            "GBP",
-            "EUR",
-            "CAD",
-            "AUD",
-            "CHF",
-            "SGD",
-            "INR",
-            "PKR"
-          ],
+    "kind": {
+      "anyOf": [
+        {
+          "const": "person",
           "type": "string"
         },
-        "enabled": {
-          "description": "Whether paid meetings are enabled",
-          "type": "boolean"
+        {
+          "const": "organization",
+          "type": "string"
         },
-        "minimumAmount": {
-          "const": 5,
-          "description": "Minimum amount bookers can pay (always $5)",
-          "type": "number"
+        {
+          "const": "application",
+          "type": "string"
         },
-        "suggestedAmount": {
-          "description": "Suggested price amount in dollars (e.g., 50 for $50)",
-          "type": "number"
+        {
+          "const": "agent",
+          "type": "string"
         }
-      },
-      "required": [
-        "enabled",
-        "suggestedAmount",
-        "currency",
-        "minimumAmount",
-        "allowFree"
-      ],
-      "type": "object"
+      ]
     },
-    "Me3BusinessContext": {
-      "additionalProperties": false,
-      "description": "Structured site/business context for agents and positioning. This keeps offer clarity explicit without overloading freeform bio text.",
-      "properties": {
-        "audience": {
-          "description": "Human-facing description of the ideal client or audience",
-          "type": "string"
-        },
-        "positioningStatement": {
-          "description": "Full positioning sentence used as the basis for agent understanding",
-          "type": "string"
-        },
-        "primaryOutcome": {
-          "description": "Main progress the buyer is hiring the offer to create",
-          "type": "string"
-        },
-        "primaryProblem": {
-          "description": "Core pain point, blocker, or job-to-be-done",
-          "type": "string"
-        },
-        "solution": {
-          "description": "How the person solves the problem or delivers the offer",
-          "type": "string"
-        },
-        "targetMarket": {
-          "description": "Tight target-market label for routing and positioning",
-          "type": "string"
-        }
-      },
-      "type": "object"
+    "name": {
+      "minLength": 1,
+      "maxLength": 100,
+      "type": "string"
     },
-    "Me3Button": {
-      "additionalProperties": false,
-      "properties": {
-        "icon": {
-          "description": "Optional icon (emoji or icon identifier)",
-          "type": "string"
-        },
-        "style": {
-          "description": "Button style",
-          "enum": [
-            "primary",
-            "secondary",
-            "outline"
-          ],
-          "type": "string"
-        },
-        "text": {
-          "description": "Button text (max 30 chars)",
-          "type": "string"
-        },
-        "url": {
-          "description": "URL to open when clicked",
-          "type": "string"
-        }
-      },
-      "required": [
-        "text",
-        "url"
-      ],
-      "type": "object"
+    "id": {
+      "minLength": 1,
+      "maxLength": 2048,
+      "pattern": "^[A-Za-z][A-Za-z0-9+.-]*:",
+      "type": "string"
     },
-    "Me3Footer": {
-      "additionalProperties": false,
-      "properties": {
-        "link": {
-          "$ref": "#/definitions/Me3FooterLink",
-          "description": "Optional custom footer link"
-        },
-        "text": {
-          "description": "Custom footer text (e.g. \"Built by Jane\")",
-          "type": "string"
-        }
-      },
-      "type": "object"
+    "url": {
+      "minLength": 9,
+      "maxLength": 2048,
+      "pattern": "^https://",
+      "type": "string"
     },
-    "Me3FooterLink": {
-      "additionalProperties": false,
-      "properties": {
-        "text": {
-          "description": "Link text",
-          "type": "string"
-        },
-        "url": {
-          "description": "URL to open when clicked",
-          "type": "string"
-        }
-      },
-      "required": [
-        "text",
-        "url"
-      ],
-      "type": "object"
+    "handle": {
+      "minLength": 1,
+      "maxLength": 60,
+      "pattern": "^[A-Za-z0-9_-]+$",
+      "type": "string"
     },
-    "Me3IntentBook": {
-      "additionalProperties": false,
-      "description": "Booking/scheduling intent. Declares that the person accepts meeting bookings.",
-      "properties": {
-        "availability": {
-          "$ref": "#/definitions/Me3BookingAvailability",
-          "description": "Availability windows - for native me3 booking"
-        },
-        "bufferTime": {
-          "description": "Buffer time between meetings in minutes (default: 0)",
-          "type": "number"
-        },
-        "description": {
-          "description": "What the meeting is about",
-          "type": "string"
-        },
-        "duration": {
-          "description": "Meeting duration in minutes",
-          "type": "number"
-        },
-        "enabled": {
-          "description": "Whether booking is enabled",
-          "type": "boolean"
-        },
-        "pricing": {
-          "$ref": "#/definitions/Me3BookingPricing",
-          "description": "Pricing configuration for paid meetings (optional)"
-        },
-        "provider": {
-          "description": "Booking provider (e.g., \"cal.com\", \"calendly\") - for external providers",
-          "type": "string"
-        },
-        "title": {
-          "description": "Meeting title (e.g., \"30-min Consultation\")",
-          "type": "string"
-        },
-        "url": {
-          "description": "Direct booking URL - for external booking systems",
-          "type": "string"
-        }
-      },
-      "required": [
-        "enabled"
-      ],
-      "type": "object"
+    "bio": {
+      "minLength": 1,
+      "maxLength": 500,
+      "type": "string"
     },
-    "Me3IntentShop": {
-      "additionalProperties": false,
-      "description": "Shop intent. Declares that the person sells products via a simple shop.",
-      "properties": {
-        "currency": {
-          "description": "Shop currency",
-          "enum": [
-            "USD",
-            "GBP",
-            "EUR",
-            "CAD",
-            "AUD",
-            "CHF",
-            "SGD",
-            "INR",
-            "PKR"
-          ],
-          "type": "string"
-        },
-        "description": {
-          "description": "Shop description",
-          "type": "string"
-        },
-        "enabled": {
-          "description": "Whether shop is enabled",
-          "type": "boolean"
-        },
-        "title": {
-          "description": "Shop title/name",
-          "type": "string"
-        }
-      },
-      "required": [
-        "enabled",
-        "currency"
-      ],
-      "type": "object"
+    "avatar": {
+      "minLength": 1,
+      "maxLength": 2048,
+      "pattern": "^(https://|\\./|/)",
+      "type": "string"
     },
-    "Me3IntentSubscribe": {
-      "additionalProperties": false,
-      "description": "Newsletter subscription intent. When enabled, the site accepts email subscriptions via POST /api/subscribe",
-      "properties": {
-        "description": {
-          "description": "What subscribers will receive - for agents to explain the value",
-          "type": "string"
-        },
-        "enabled": {
-          "description": "Whether newsletter signups are enabled",
-          "type": "boolean"
-        },
-        "frequency": {
-          "description": "How often subscribers will hear from you",
-          "enum": [
-            "daily",
-            "weekly",
-            "monthly",
-            "irregular"
-          ],
-          "type": "string"
-        },
-        "title": {
-          "description": "Newsletter title (e.g., \"AI Weekly\") - for agents to present context",
-          "type": "string"
-        }
-      },
-      "required": [
-        "enabled"
-      ],
-      "type": "object"
+    "banner": {
+      "minLength": 1,
+      "maxLength": 2048,
+      "pattern": "^(https://|\\./|/)",
+      "type": "string"
     },
-    "Me3Intents": {
-      "additionalProperties": false,
-      "description": "Intents object - declares what actions visitors/agents can take. This is the machine-readable API contract for interacting with a person.",
-      "properties": {
-        "book": {
-          "$ref": "#/definitions/Me3IntentBook",
-          "description": "Meeting booking"
-        },
-        "shop": {
-          "$ref": "#/definitions/Me3IntentShop",
-          "description": "Shop intent"
-        },
-        "subscribe": {
-          "$ref": "#/definitions/Me3IntentSubscribe",
-          "description": "Newsletter subscription"
-        }
-      },
-      "type": "object"
+    "location": {
+      "minLength": 1,
+      "maxLength": 160,
+      "type": "string"
     },
-    "Me3Links": {
-      "additionalProperties": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "not": {}
-          }
-        ]
-      },
-      "properties": {
-        "email": {
-          "type": "string"
-        },
-        "github": {
-          "type": "string"
-        },
-        "instagram": {
-          "type": "string"
-        },
-        "linkedin": {
-          "type": "string"
-        },
-        "tiktok": {
-          "type": "string"
-        },
-        "twitter": {
-          "type": "string"
-        },
-        "website": {
-          "type": "string"
-        },
-        "youtube": {
-          "type": "string"
-        }
-      },
-      "type": "object"
-    },
-    "Me3LocationData": {
+    "locationData": {
       "additionalProperties": false,
-      "properties": {
-        "country": {
-          "description": "Country name",
-          "type": "string"
-        },
-        "countryCode": {
-          "description": "ISO 3166-1 alpha-2 country code",
-          "type": "string"
-        },
-        "label": {
-          "description": "Human-readable public place label, usually town/city plus region/country",
-          "type": "string"
-        },
-        "latitude": {
-          "description": "Approximate latitude for local discovery; should be town/city-level, not an exact address",
-          "type": "number"
-        },
-        "locality": {
-          "description": "Town, city, locality, or nearest named place",
-          "type": "string"
-        },
-        "longitude": {
-          "description": "Approximate longitude for local discovery; should be town/city-level, not an exact address",
-          "type": "number"
-        },
-        "precision": {
-          "$ref": "#/definitions/Me3LocationPrecision",
-          "description": "Approximation level for the stored public location"
-        },
-        "region": {
-          "description": "Region, state, county, province, or equivalent",
-          "type": "string"
-        },
-        "source": {
-          "$ref": "#/definitions/Me3LocationSource",
-          "description": "Optional lookup source metadata for refresh/dedupe"
-        }
-      },
+      "description": "Approximate public place data. Publishers should use locality-level coordinates, never a private street address.",
+      "type": "object",
       "required": [
         "label",
         "latitude",
         "longitude",
         "precision"
       ],
-      "type": "object"
-    },
-    "Me3LocationPrecision": {
-      "enum": [
-        "locality",
-        "city",
-        "district",
-        "county",
-        "region",
-        "country",
-        "unknown"
-      ],
-      "type": "string"
-    },
-    "Me3LocationSource": {
-      "additionalProperties": false,
       "properties": {
-        "id": {
-          "description": "Provider-specific stable place identifier",
+        "label": {
+          "minLength": 1,
+          "maxLength": 160,
           "type": "string"
         },
-        "osmId": {
-          "description": "OpenStreetMap object id, when available",
-          "type": [
-            "string",
-            "number"
-          ]
-        },
-        "osmKey": {
-          "description": "OpenStreetMap primary tag key, when available",
-          "type": "string"
-        },
-        "osmType": {
-          "description": "OpenStreetMap object type, when available",
-          "type": "string"
-        },
-        "osmValue": {
-          "description": "OpenStreetMap primary tag value, when available",
-          "type": "string"
-        },
-        "provider": {
-          "description": "Lookup provider or data source used to resolve this public location",
-          "type": "string"
-        }
-      },
-      "required": [
-        "provider"
-      ],
-      "type": "object"
-    },
-    "Me3Media": {
-      "additionalProperties": false,
-      "properties": {
-        "duration": {
-          "description": "Duration in seconds (optional)",
+        "latitude": {
+          "minimum": -90,
+          "maximum": 90,
           "type": "number"
         },
-        "id": {
-          "description": "Provider-specific id (optional)",
-          "type": "string"
-        },
-        "provider": {
-          "description": "Provider identifier (optional)",
-          "type": "string"
-        },
-        "thumbnail": {
-          "description": "Thumbnail URL (optional)",
-          "type": "string"
-        },
-        "url": {
-          "description": "Media URL (player or file)",
-          "type": "string"
-        }
-      },
-      "type": "object"
-    },
-    "Me3Page": {
-      "additionalProperties": false,
-      "description": "me3 Protocol v0.1\n\nA protocol for portable personal websites. Your site lives in a single me.json file that you can take anywhere.",
-      "properties": {
-        "file": {
-          "description": "Path to markdown file (relative to me.json)",
-          "type": "string"
-        },
-        "slug": {
-          "description": "URL-friendly identifier",
-          "type": "string"
-        },
-        "title": {
-          "description": "Display name for navigation",
-          "type": "string"
-        },
-        "visible": {
-          "description": "Whether to show in navigation",
-          "type": "boolean"
-        }
-      },
-      "required": [
-        "slug",
-        "title",
-        "file",
-        "visible"
-      ],
-      "type": "object"
-    },
-    "Me3Post": {
-      "additionalProperties": false,
-      "properties": {
-        "emailedAt": {
-          "description": "ISO timestamp when post was sent to newsletter subscribers (optional)",
-          "type": "string"
-        },
-        "excerpt": {
-          "description": "Short excerpt for archive/listing (optional)",
-          "type": "string"
-        },
-        "file": {
-          "description": "Path to markdown file (relative to me.json)",
-          "type": "string"
-        },
-        "media": {
-          "$ref": "#/definitions/Me3Media",
-          "description": "Media payload for non-text posts (optional)"
-        },
-        "publishedAt": {
-          "description": "ISO publish date (optional)",
-          "type": "string"
-        },
-        "slug": {
-          "description": "URL-friendly identifier",
-          "type": "string"
-        },
-        "title": {
-          "description": "Display name for listing",
-          "type": "string"
-        },
-        "type": {
-          "$ref": "#/definitions/Me3PostType",
-          "description": "Post format (optional)"
-        }
-      },
-      "required": [
-        "slug",
-        "title",
-        "file"
-      ],
-      "type": "object"
-    },
-    "Me3PostType": {
-      "enum": [
-        "article",
-        "note",
-        "video",
-        "audio",
-        "image",
-        "link"
-      ],
-      "type": "string"
-    },
-    "Me3Product": {
-      "additionalProperties": false,
-      "properties": {
-        "available": {
-          "description": "Whether product is available for purchase",
-          "type": "boolean"
-        },
-        "currency": {
-          "description": "Currency code",
-          "enum": [
-            "USD",
-            "GBP",
-            "EUR",
-            "CAD",
-            "AUD",
-            "CHF",
-            "SGD",
-            "INR",
-            "PKR"
-          ],
-          "type": "string"
-        },
-        "excerpt": {
-          "description": "Short excerpt for listings (optional)",
-          "type": "string"
-        },
-        "file": {
-          "description": "Path to markdown file (relative to me.json)",
-          "type": "string"
-        },
-        "images": {
-          "description": "Product images (URLs)",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "price": {
-          "description": "Product price in cents (e.g., 2999 for $29.99)",
+        "longitude": {
+          "minimum": -180,
+          "maximum": 180,
           "type": "number"
         },
-        "publishedAt": {
-          "description": "ISO publish date (optional)",
-          "type": "string"
-        },
-        "slug": {
-          "description": "URL-friendly identifier",
-          "type": "string"
-        },
-        "title": {
-          "description": "Product name",
-          "type": "string"
-        }
-      },
-      "required": [
-        "slug",
-        "title",
-        "file",
-        "price",
-        "currency"
-      ],
-      "type": "object"
-    },
-    "Me3Profile": {
-      "additionalProperties": false,
-      "properties": {
-        "actions": {
-          "additionalProperties": {
-            "$ref": "#/definitions/Me3ActionDefinition"
-          },
-          "description": "Explicit action descriptors for agent invocation",
-          "type": "object"
-        },
-        "avatar": {
-          "description": "Avatar URL (absolute or relative)",
-          "type": "string"
-        },
-        "banner": {
-          "description": "Banner/header image URL",
-          "type": "string"
-        },
-        "bio": {
-          "description": "Short bio",
-          "type": "string"
-        },
-        "business": {
-          "$ref": "#/definitions/Me3BusinessContext",
-          "description": "Structured site/business context for agents"
-        },
-        "buttons": {
-          "description": "Call-to-action buttons",
-          "items": {
-            "$ref": "#/definitions/Me3Button"
-          },
-          "type": "array"
-        },
-        "footer": {
+        "precision": {
           "anyOf": [
             {
-              "$ref": "#/definitions/Me3Footer"
+              "const": "locality",
+              "type": "string"
             },
             {
-              "const": false,
-              "type": "boolean"
+              "const": "city",
+              "type": "string"
+            },
+            {
+              "const": "district",
+              "type": "string"
+            },
+            {
+              "const": "county",
+              "type": "string"
+            },
+            {
+              "const": "region",
+              "type": "string"
+            },
+            {
+              "const": "country",
+              "type": "string"
+            },
+            {
+              "const": "unknown",
+              "type": "string"
             }
-          ],
-          "description": "Custom footer configuration.\n- `undefined`: default footer behavior (renderer-defined)\n- `false`: hide footer (renderer may restrict this to Pro tiers)"
+          ]
         },
-        "handle": {
-          "description": "Username/handle",
+        "locality": {
+          "minLength": 1,
+          "maxLength": 160,
           "type": "string"
         },
-        "intents": {
-          "$ref": "#/definitions/Me3Intents",
-          "description": "Intents - machine-readable actions that visitors/agents can take. This is the API contract for interacting with the person."
-        },
-        "links": {
-          "$ref": "#/definitions/Me3Links",
-          "description": "Social and external links"
-        },
-        "location": {
-          "description": "Freeform location string (e.g. \"Remote\", \"Berlin, Germany\")",
+        "region": {
+          "minLength": 1,
+          "maxLength": 160,
           "type": "string"
         },
-        "locationData": {
-          "$ref": "#/definitions/Me3LocationData",
-          "description": "Structured public location data for approximate local discovery"
-        },
-        "name": {
-          "description": "Display name (required)",
+        "country": {
+          "minLength": 1,
+          "maxLength": 160,
           "type": "string"
         },
-        "pages": {
-          "description": "Custom pages (markdown)",
-          "items": {
-            "$ref": "#/definitions/Me3Page"
-          },
-          "type": "array"
-        },
-        "posts": {
-          "description": "Blog posts (markdown)",
-          "items": {
-            "$ref": "#/definitions/Me3Post"
-          },
-          "type": "array"
-        },
-        "products": {
-          "description": "Products (markdown)",
-          "items": {
-            "$ref": "#/definitions/Me3Product"
-          },
-          "type": "array"
-        },
-        "services": {
-          "description": "Structured services or offerings for agents to evaluate",
-          "items": {
-            "$ref": "#/definitions/Me3Service"
-          },
-          "type": "array"
-        },
-        "testimonialDisplay": {
-          "$ref": "#/definitions/Me3TestimonialDisplay",
-          "description": "Where testimonials should be displayed"
-        },
-        "testimonials": {
-          "description": "Testimonials / social proof",
-          "items": {
-            "$ref": "#/definitions/Me3Testimonial"
-          },
-          "type": "array"
-        },
-        "testimonialsTitle": {
-          "description": "Title for the testimonials section/page",
+        "countryCode": {
+          "pattern": "^[A-Z]{2}$",
           "type": "string"
         },
-        "verification": {
-          "$ref": "#/definitions/Me3Verification",
-          "description": "Human verification status (populated from account, not editable per-site)"
-        },
-        "version": {
-          "description": "Protocol version",
+        "placeId": {
+          "minLength": 3,
+          "maxLength": 200,
+          "pattern": "^[A-Za-z][A-Za-z0-9+.-]*:",
           "type": "string"
         }
-      },
-      "required": [
-        "version",
-        "name"
-      ],
-      "type": "object"
+      }
     },
-    "Me3Service": {
-      "additionalProperties": false,
-      "description": "Structured service or offering metadata. This lets agents understand who a session is for and what outcome it provides.",
-      "properties": {
-        "availabilityMode": {
-          "$ref": "#/definitions/Me3ServiceAvailabilityMode",
-          "description": "How availability is managed"
-        },
-        "currency": {
-          "description": "Currency code for the price",
-          "enum": [
-            "USD",
-            "GBP",
-            "EUR",
-            "CAD",
-            "AUD",
-            "CHF",
-            "SGD",
-            "INR",
-            "PKR"
-          ],
-          "type": "string"
-        },
-        "description": {
-          "description": "Short service description",
-          "type": "string"
-        },
-        "duration": {
-          "description": "Duration in minutes",
-          "type": "number"
-        },
-        "id": {
-          "description": "Stable identifier for the service",
-          "type": "string"
-        },
-        "outcomes": {
-          "description": "Expected outcomes or benefits",
-          "items": {
+    "links": {
+      "maxItems": 100,
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "rel",
+          "href"
+        ],
+        "properties": {
+          "rel": {
+            "minLength": 1,
+            "maxLength": 80,
+            "pattern": "^[a-z][a-z0-9._-]*$",
             "type": "string"
           },
-          "type": "array"
-        },
-        "price": {
-          "description": "Price in major currency units (e.g. 50 for EUR 50)",
-          "type": "number"
-        },
-        "sessionType": {
-          "description": "Delivery/session type (e.g. \"1:1\", \"group\", \"async\")",
-          "type": "string"
-        },
-        "status": {
-          "$ref": "#/definitions/Me3ServiceStatus",
-          "description": "Current service status"
-        },
-        "title": {
-          "description": "Display title",
-          "type": "string"
-        },
-        "whoItsFor": {
-          "description": "Short audience descriptors",
-          "items": {
+          "href": {
+            "minLength": 1,
+            "maxLength": 2048,
+            "pattern": "^(https://|mailto:|tel:)",
             "type": "string"
           },
-          "type": "array"
+          "label": {
+            "minLength": 1,
+            "maxLength": 160,
+            "type": "string"
+          }
         }
-      },
-      "required": [
-        "id",
-        "title"
-      ],
-      "type": "object"
+      }
     },
-    "Me3ServiceAvailabilityMode": {
-      "enum": [
-        "calendar",
-        "native",
-        "external",
-        "manual"
-      ],
-      "type": "string"
+    "pages": {
+      "maxItems": 500,
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "url"
+        ],
+        "properties": {
+          "id": {
+            "minLength": 1,
+            "maxLength": 120,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": {
+            "minLength": 1,
+            "maxLength": 160,
+            "type": "string"
+          },
+          "url": {
+            "minLength": 1,
+            "maxLength": 2048,
+            "pattern": "^(https://|\\./|/)",
+            "type": "string"
+          }
+        }
+      }
     },
-    "Me3ServiceStatus": {
-      "enum": [
-        "active",
-        "paused",
-        "draft"
-      ],
-      "type": "string"
+    "posts": {
+      "maxItems": 5000,
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "url"
+        ],
+        "properties": {
+          "id": {
+            "minLength": 1,
+            "maxLength": 120,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": {
+            "minLength": 1,
+            "maxLength": 160,
+            "type": "string"
+          },
+          "url": {
+            "minLength": 1,
+            "maxLength": 2048,
+            "pattern": "^(https://|\\./|/)",
+            "type": "string"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "const": "article",
+                "type": "string"
+              },
+              {
+                "const": "note",
+                "type": "string"
+              },
+              {
+                "const": "video",
+                "type": "string"
+              },
+              {
+                "const": "audio",
+                "type": "string"
+              },
+              {
+                "const": "image",
+                "type": "string"
+              },
+              {
+                "const": "link",
+                "type": "string"
+              }
+            ]
+          },
+          "media": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "url"
+            ],
+            "properties": {
+              "url": {
+                "minLength": 1,
+                "maxLength": 2048,
+                "pattern": "^(https://|\\./|/)",
+                "type": "string"
+              },
+              "durationSeconds": {
+                "minimum": 0,
+                "type": "number"
+              },
+              "thumbnail": {
+                "minLength": 1,
+                "maxLength": 2048,
+                "pattern": "^(https://|\\./|/)",
+                "type": "string"
+              }
+            }
+          },
+          "publishedAt": {
+            "minLength": 1,
+            "maxLength": 80,
+            "type": "string"
+          },
+          "excerpt": {
+            "minLength": 1,
+            "maxLength": 500,
+            "type": "string"
+          }
+        }
+      }
     },
-    "Me3Testimonial": {
+    "products": {
+      "maxItems": 500,
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "price"
+        ],
+        "properties": {
+          "id": {
+            "minLength": 1,
+            "maxLength": 120,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": {
+            "minLength": 1,
+            "maxLength": 160,
+            "type": "string"
+          },
+          "description": {
+            "minLength": 1,
+            "maxLength": 1000,
+            "type": "string"
+          },
+          "url": {
+            "minLength": 1,
+            "maxLength": 2048,
+            "pattern": "^(https://|\\./|/)",
+            "type": "string"
+          },
+          "price": {
+            "additionalProperties": false,
+            "description": "A non-negative decimal amount in major currency units and an ISO 4217 currency code.",
+            "type": "object",
+            "required": [
+              "amount",
+              "currency"
+            ],
+            "properties": {
+              "amount": {
+                "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$",
+                "type": "string"
+              },
+              "currency": {
+                "pattern": "^[A-Z]{3}$",
+                "type": "string"
+              }
+            }
+          },
+          "images": {
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "minLength": 1,
+              "maxLength": 2048,
+              "pattern": "^(https://|\\./|/)",
+              "type": "string"
+            }
+          },
+          "available": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "business": {
       "additionalProperties": false,
+      "type": "object",
       "properties": {
-        "avatar": {
-          "description": "Avatar image URL",
+        "positioningStatement": {
+          "minLength": 1,
+          "maxLength": 320,
           "type": "string"
         },
-        "handle": {
-          "description": "Social handle (optional)",
+        "audience": {
+          "minLength": 1,
+          "maxLength": 160,
           "type": "string"
         },
-        "name": {
-          "description": "Person's display name",
+        "primaryProblem": {
+          "minLength": 1,
+          "maxLength": 160,
           "type": "string"
         },
-        "profileUrl": {
-          "description": "Link to their profile/site (optional)",
+        "solution": {
+          "minLength": 1,
+          "maxLength": 240,
           "type": "string"
         },
-        "quote": {
-          "description": "The testimonial quote text",
+        "targetMarket": {
+          "minLength": 1,
+          "maxLength": 160,
+          "type": "string"
+        },
+        "primaryOutcome": {
+          "minLength": 1,
+          "maxLength": 240,
           "type": "string"
         }
-      },
-      "required": [
-        "name",
-        "quote"
-      ],
-      "type": "object"
+      }
     },
-    "Me3TestimonialDisplay": {
-      "enum": [
-        "homepage",
-        "standalone"
-      ],
-      "type": "string"
+    "services": {
+      "maxItems": 500,
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "title"
+        ],
+        "properties": {
+          "id": {
+            "minLength": 1,
+            "maxLength": 120,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": {
+            "minLength": 1,
+            "maxLength": 160,
+            "type": "string"
+          },
+          "description": {
+            "minLength": 1,
+            "maxLength": 1000,
+            "type": "string"
+          },
+          "url": {
+            "minLength": 1,
+            "maxLength": 2048,
+            "pattern": "^(https://|\\./|/)",
+            "type": "string"
+          },
+          "sessionType": {
+            "minLength": 1,
+            "maxLength": 160,
+            "type": "string"
+          },
+          "durationMinutes": {
+            "exclusiveMinimum": 0,
+            "type": "number"
+          },
+          "price": {
+            "additionalProperties": false,
+            "description": "A non-negative decimal amount in major currency units and an ISO 4217 currency code.",
+            "type": "object",
+            "required": [
+              "amount",
+              "currency"
+            ],
+            "properties": {
+              "amount": {
+                "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$",
+                "type": "string"
+              },
+              "currency": {
+                "pattern": "^[A-Z]{3}$",
+                "type": "string"
+              }
+            }
+          },
+          "whoItsFor": {
+            "maxItems": 30,
+            "type": "array",
+            "items": {
+              "minLength": 1,
+              "maxLength": 160,
+              "type": "string"
+            }
+          },
+          "outcomes": {
+            "maxItems": 30,
+            "type": "array",
+            "items": {
+              "minLength": 1,
+              "maxLength": 160,
+              "type": "string"
+            }
+          },
+          "availability": {
+            "anyOf": [
+              {
+                "const": "calendar",
+                "type": "string"
+              },
+              {
+                "const": "external",
+                "type": "string"
+              },
+              {
+                "const": "manual",
+                "type": "string"
+              }
+            ]
+          },
+          "status": {
+            "anyOf": [
+              {
+                "const": "active",
+                "type": "string"
+              },
+              {
+                "const": "paused",
+                "type": "string"
+              }
+            ]
+          }
+        }
+      }
     },
-    "Me3Verification": {
+    "actions": {
       "additionalProperties": false,
-      "properties": {
-        "verified": {
-          "description": "Whether the author is a verified human",
-          "type": "boolean"
-        },
-        "verifiedAt": {
-          "description": "When verification occurred (ISO timestamp)",
-          "type": "string"
-        },
-        "verifiedDomain": {
-          "description": "The domain used for verification",
-          "type": "string"
+      "type": "object",
+      "patternProperties": {
+        "^[A-Za-z0-9][A-Za-z0-9._:-]*$": {
+          "anyOf": [
+            {
+              "additionalProperties": false,
+              "description": "A human-facing HTTPS flow.",
+              "type": "object",
+              "required": [
+                "type",
+                "url"
+              ],
+              "properties": {
+                "type": {
+                  "const": "link",
+                  "type": "string"
+                },
+                "url": {
+                  "minLength": 9,
+                  "maxLength": 2048,
+                  "pattern": "^https://",
+                  "type": "string"
+                },
+                "description": {
+                  "minLength": 1,
+                  "maxLength": 1000,
+                  "type": "string"
+                }
+              }
+            },
+            {
+              "additionalProperties": false,
+              "description": "An operation described by a public OpenAPI document. Discovery does not grant authority to invoke it.",
+              "type": "object",
+              "required": [
+                "type",
+                "spec",
+                "operationId"
+              ],
+              "properties": {
+                "type": {
+                  "const": "openapi",
+                  "type": "string"
+                },
+                "spec": {
+                  "minLength": 9,
+                  "maxLength": 2048,
+                  "pattern": "^https://",
+                  "type": "string"
+                },
+                "operationId": {
+                  "minLength": 1,
+                  "maxLength": 120,
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+                  "type": "string"
+                },
+                "description": {
+                  "minLength": 1,
+                  "maxLength": 1000,
+                  "type": "string"
+                }
+              }
+            }
+          ]
         }
-      },
-      "required": [
-        "verified"
-      ],
-      "type": "object"
+      }
+    },
+    "capabilities": {
+      "additionalProperties": false,
+      "type": "object",
+      "patternProperties": {
+        "^[A-Za-z0-9][A-Za-z0-9._:-]*$": {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "action"
+          ],
+          "properties": {
+            "action": {
+              "minLength": 1,
+              "maxLength": 120,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            "title": {
+              "minLength": 1,
+              "maxLength": 160,
+              "type": "string"
+            },
+            "description": {
+              "minLength": 1,
+              "maxLength": 1000,
+              "type": "string"
+            },
+            "offeringIds": {
+              "maxItems": 100,
+              "uniqueItems": true,
+              "type": "array",
+              "items": {
+                "minLength": 1,
+                "maxLength": 120,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "extensions": {
+      "additionalProperties": false,
+      "type": "object",
+      "patternProperties": {
+        "^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?/[A-Za-z0-9][A-Za-z0-9._-]*$": {
+          "$id": "T0",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "T0"
+              }
+            },
+            {
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "$ref": "T0"
+                }
+              }
+            }
+          ]
+        }
+      }
     }
   }
 }
