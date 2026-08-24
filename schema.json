@@ -1,694 +1,768 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:me3:protocol:0.2",
-  "title": "me3 Protocol Profile 0.2",
-  "description": "A portable public identity, content, offering, and capability manifest.",
-  "additionalProperties": false,
-  "type": "object",
-  "required": [
-    "version",
-    "kind",
-    "name"
-  ],
-  "properties": {
-    "$schema": {
-      "const": "https://unpkg.com/me3-protocol@3.0.0/schema.json",
-      "type": "string"
-    },
-    "version": {
-      "const": "0.2",
-      "type": "string"
-    },
-    "kind": {
-      "anyOf": [
-        {
-          "const": "person",
-          "type": "string"
-        },
-        {
-          "const": "organization",
-          "type": "string"
-        },
-        {
-          "const": "application",
-          "type": "string"
-        },
-        {
-          "const": "agent",
-          "type": "string"
-        }
-      ]
-    },
-    "name": {
-      "minLength": 1,
-      "maxLength": 100,
-      "type": "string"
-    },
-    "id": {
-      "minLength": 1,
-      "maxLength": 2048,
-      "pattern": "^[A-Za-z][A-Za-z0-9+.-]*:",
-      "type": "string"
-    },
-    "url": {
-      "minLength": 9,
-      "maxLength": 2048,
-      "pattern": "^https://",
-      "type": "string"
-    },
-    "handle": {
-      "minLength": 1,
-      "maxLength": 60,
-      "pattern": "^[A-Za-z0-9_-]+$",
-      "type": "string"
-    },
-    "bio": {
-      "minLength": 1,
-      "maxLength": 500,
-      "type": "string"
-    },
-    "avatar": {
-      "minLength": 1,
-      "maxLength": 2048,
-      "pattern": "^(https://|\\./|/)",
-      "type": "string"
-    },
-    "banner": {
-      "minLength": 1,
-      "maxLength": 2048,
-      "pattern": "^(https://|\\./|/)",
-      "type": "string"
-    },
-    "location": {
-      "minLength": 1,
-      "maxLength": 160,
-      "type": "string"
-    },
-    "locationData": {
+  "$id": "urn:me3:protocol:0.3",
+  "title": "me3 Protocol Profile 0.3",
+  "description": "A visibility-aware portable public profile and capability manifest.",
+  "anyOf": [
+    {
+      "title": "Public me3 Profile 0.3",
+      "description": "The full public profile and capability manifest.",
       "additionalProperties": false,
-      "description": "Approximate public place data. Publishers should use locality-level coordinates, never a private street address.",
       "type": "object",
       "required": [
-        "label",
-        "latitude",
-        "longitude",
-        "precision"
+        "version",
+        "kind",
+        "visibility",
+        "name"
       ],
       "properties": {
-        "label": {
-          "minLength": 1,
-          "maxLength": 160,
+        "$schema": {
+          "const": "https://unpkg.com/me3-protocol@4.0.0/schema.json",
           "type": "string"
         },
-        "latitude": {
-          "minimum": -90,
-          "maximum": 90,
-          "type": "number"
+        "version": {
+          "const": "0.3",
+          "type": "string"
         },
-        "longitude": {
-          "minimum": -180,
-          "maximum": 180,
-          "type": "number"
-        },
-        "precision": {
+        "kind": {
           "anyOf": [
             {
-              "const": "locality",
+              "const": "person",
               "type": "string"
             },
             {
-              "const": "city",
+              "const": "organization",
               "type": "string"
             },
             {
-              "const": "district",
+              "const": "application",
               "type": "string"
             },
             {
-              "const": "county",
-              "type": "string"
-            },
-            {
-              "const": "region",
-              "type": "string"
-            },
-            {
-              "const": "country",
-              "type": "string"
-            },
-            {
-              "const": "unknown",
+              "const": "agent",
               "type": "string"
             }
           ]
         },
-        "locality": {
+        "visibility": {
+          "const": "public",
+          "type": "string"
+        },
+        "name": {
           "minLength": 1,
-          "maxLength": 160,
+          "maxLength": 100,
           "type": "string"
         },
-        "region": {
+        "id": {
           "minLength": 1,
-          "maxLength": 160,
-          "type": "string"
-        },
-        "country": {
-          "minLength": 1,
-          "maxLength": 160,
-          "type": "string"
-        },
-        "countryCode": {
-          "pattern": "^[A-Z]{2}$",
-          "type": "string"
-        },
-        "placeId": {
-          "minLength": 3,
-          "maxLength": 200,
+          "maxLength": 2048,
           "pattern": "^[A-Za-z][A-Za-z0-9+.-]*:",
           "type": "string"
-        }
-      }
-    },
-    "links": {
-      "maxItems": 100,
-      "type": "array",
-      "items": {
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "rel",
-          "href"
-        ],
-        "properties": {
-          "rel": {
-            "minLength": 1,
-            "maxLength": 80,
-            "pattern": "^[a-z][a-z0-9._-]*$",
-            "type": "string"
-          },
-          "href": {
-            "minLength": 1,
-            "maxLength": 2048,
-            "pattern": "^(https://|mailto:|tel:)",
-            "type": "string"
-          },
-          "label": {
-            "minLength": 1,
-            "maxLength": 160,
-            "type": "string"
+        },
+        "url": {
+          "minLength": 9,
+          "maxLength": 2048,
+          "pattern": "^https://",
+          "type": "string"
+        },
+        "handle": {
+          "minLength": 1,
+          "maxLength": 60,
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "type": "string"
+        },
+        "bio": {
+          "minLength": 1,
+          "maxLength": 500,
+          "type": "string"
+        },
+        "avatar": {
+          "minLength": 1,
+          "maxLength": 2048,
+          "pattern": "^(https://|\\./|/)",
+          "type": "string"
+        },
+        "banner": {
+          "minLength": 1,
+          "maxLength": 2048,
+          "pattern": "^(https://|\\./|/)",
+          "type": "string"
+        },
+        "location": {
+          "minLength": 1,
+          "maxLength": 160,
+          "type": "string"
+        },
+        "locationData": {
+          "additionalProperties": false,
+          "description": "Approximate public place data. Publishers should use locality-level coordinates, never a private street address.",
+          "type": "object",
+          "required": [
+            "label",
+            "latitude",
+            "longitude",
+            "precision"
+          ],
+          "properties": {
+            "label": {
+              "minLength": 1,
+              "maxLength": 160,
+              "type": "string"
+            },
+            "latitude": {
+              "minimum": -90,
+              "maximum": 90,
+              "type": "number"
+            },
+            "longitude": {
+              "minimum": -180,
+              "maximum": 180,
+              "type": "number"
+            },
+            "precision": {
+              "anyOf": [
+                {
+                  "const": "locality",
+                  "type": "string"
+                },
+                {
+                  "const": "city",
+                  "type": "string"
+                },
+                {
+                  "const": "district",
+                  "type": "string"
+                },
+                {
+                  "const": "county",
+                  "type": "string"
+                },
+                {
+                  "const": "region",
+                  "type": "string"
+                },
+                {
+                  "const": "country",
+                  "type": "string"
+                },
+                {
+                  "const": "unknown",
+                  "type": "string"
+                }
+              ]
+            },
+            "locality": {
+              "minLength": 1,
+              "maxLength": 160,
+              "type": "string"
+            },
+            "region": {
+              "minLength": 1,
+              "maxLength": 160,
+              "type": "string"
+            },
+            "country": {
+              "minLength": 1,
+              "maxLength": 160,
+              "type": "string"
+            },
+            "countryCode": {
+              "pattern": "^[A-Z]{2}$",
+              "type": "string"
+            },
+            "placeId": {
+              "minLength": 3,
+              "maxLength": 200,
+              "pattern": "^[A-Za-z][A-Za-z0-9+.-]*:",
+              "type": "string"
+            }
           }
-        }
-      }
-    },
-    "pages": {
-      "maxItems": 500,
-      "type": "array",
-      "items": {
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "id",
-          "title",
-          "url"
-        ],
-        "properties": {
-          "id": {
-            "minLength": 1,
-            "maxLength": 120,
-            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
-            "type": "string"
-          },
-          "title": {
-            "minLength": 1,
-            "maxLength": 160,
-            "type": "string"
-          },
-          "url": {
-            "minLength": 1,
-            "maxLength": 2048,
-            "pattern": "^(https://|\\./|/)",
-            "type": "string"
-          }
-        }
-      }
-    },
-    "posts": {
-      "maxItems": 5000,
-      "type": "array",
-      "items": {
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "id",
-          "title",
-          "url"
-        ],
-        "properties": {
-          "id": {
-            "minLength": 1,
-            "maxLength": 120,
-            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
-            "type": "string"
-          },
-          "title": {
-            "minLength": 1,
-            "maxLength": 160,
-            "type": "string"
-          },
-          "url": {
-            "minLength": 1,
-            "maxLength": 2048,
-            "pattern": "^(https://|\\./|/)",
-            "type": "string"
-          },
-          "type": {
-            "anyOf": [
-              {
-                "const": "article",
-                "type": "string"
-              },
-              {
-                "const": "note",
-                "type": "string"
-              },
-              {
-                "const": "video",
-                "type": "string"
-              },
-              {
-                "const": "audio",
-                "type": "string"
-              },
-              {
-                "const": "image",
-                "type": "string"
-              },
-              {
-                "const": "link",
-                "type": "string"
-              }
-            ]
-          },
-          "media": {
+        },
+        "links": {
+          "maxItems": 100,
+          "type": "array",
+          "items": {
             "additionalProperties": false,
             "type": "object",
             "required": [
+              "rel",
+              "href"
+            ],
+            "properties": {
+              "rel": {
+                "minLength": 1,
+                "maxLength": 80,
+                "pattern": "^[a-z][a-z0-9._-]*$",
+                "type": "string"
+              },
+              "href": {
+                "minLength": 1,
+                "maxLength": 2048,
+                "pattern": "^(https://|mailto:|tel:)",
+                "type": "string"
+              },
+              "label": {
+                "minLength": 1,
+                "maxLength": 160,
+                "type": "string"
+              }
+            }
+          }
+        },
+        "pages": {
+          "maxItems": 500,
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "id",
+              "title",
               "url"
             ],
             "properties": {
+              "id": {
+                "minLength": 1,
+                "maxLength": 120,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+                "type": "string"
+              },
+              "title": {
+                "minLength": 1,
+                "maxLength": 160,
+                "type": "string"
+              },
+              "url": {
+                "minLength": 1,
+                "maxLength": 2048,
+                "pattern": "^(https://|\\./|/)",
+                "type": "string"
+              }
+            }
+          }
+        },
+        "posts": {
+          "maxItems": 5000,
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "id",
+              "title",
+              "url"
+            ],
+            "properties": {
+              "id": {
+                "minLength": 1,
+                "maxLength": 120,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+                "type": "string"
+              },
+              "title": {
+                "minLength": 1,
+                "maxLength": 160,
+                "type": "string"
+              },
               "url": {
                 "minLength": 1,
                 "maxLength": 2048,
                 "pattern": "^(https://|\\./|/)",
                 "type": "string"
               },
-              "durationSeconds": {
-                "minimum": 0,
-                "type": "number"
+              "type": {
+                "anyOf": [
+                  {
+                    "const": "article",
+                    "type": "string"
+                  },
+                  {
+                    "const": "note",
+                    "type": "string"
+                  },
+                  {
+                    "const": "video",
+                    "type": "string"
+                  },
+                  {
+                    "const": "audio",
+                    "type": "string"
+                  },
+                  {
+                    "const": "image",
+                    "type": "string"
+                  },
+                  {
+                    "const": "link",
+                    "type": "string"
+                  }
+                ]
               },
-              "thumbnail": {
+              "media": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "url"
+                ],
+                "properties": {
+                  "url": {
+                    "minLength": 1,
+                    "maxLength": 2048,
+                    "pattern": "^(https://|\\./|/)",
+                    "type": "string"
+                  },
+                  "durationSeconds": {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "thumbnail": {
+                    "minLength": 1,
+                    "maxLength": 2048,
+                    "pattern": "^(https://|\\./|/)",
+                    "type": "string"
+                  }
+                }
+              },
+              "publishedAt": {
+                "minLength": 1,
+                "maxLength": 80,
+                "type": "string"
+              },
+              "excerpt": {
+                "minLength": 1,
+                "maxLength": 500,
+                "type": "string"
+              }
+            }
+          }
+        },
+        "products": {
+          "maxItems": 500,
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "id",
+              "title",
+              "price"
+            ],
+            "properties": {
+              "id": {
+                "minLength": 1,
+                "maxLength": 120,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+                "type": "string"
+              },
+              "title": {
+                "minLength": 1,
+                "maxLength": 160,
+                "type": "string"
+              },
+              "description": {
+                "minLength": 1,
+                "maxLength": 1000,
+                "type": "string"
+              },
+              "url": {
                 "minLength": 1,
                 "maxLength": 2048,
                 "pattern": "^(https://|\\./|/)",
                 "type": "string"
-              }
-            }
-          },
-          "publishedAt": {
-            "minLength": 1,
-            "maxLength": 80,
-            "type": "string"
-          },
-          "excerpt": {
-            "minLength": 1,
-            "maxLength": 500,
-            "type": "string"
-          }
-        }
-      }
-    },
-    "products": {
-      "maxItems": 500,
-      "type": "array",
-      "items": {
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "id",
-          "title",
-          "price"
-        ],
-        "properties": {
-          "id": {
-            "minLength": 1,
-            "maxLength": 120,
-            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
-            "type": "string"
-          },
-          "title": {
-            "minLength": 1,
-            "maxLength": 160,
-            "type": "string"
-          },
-          "description": {
-            "minLength": 1,
-            "maxLength": 1000,
-            "type": "string"
-          },
-          "url": {
-            "minLength": 1,
-            "maxLength": 2048,
-            "pattern": "^(https://|\\./|/)",
-            "type": "string"
-          },
-          "price": {
-            "additionalProperties": false,
-            "description": "A non-negative decimal amount in major currency units and an ISO 4217 currency code.",
-            "type": "object",
-            "required": [
-              "amount",
-              "currency"
-            ],
-            "properties": {
-              "amount": {
-                "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$",
-                "type": "string"
               },
-              "currency": {
-                "pattern": "^[A-Z]{3}$",
-                "type": "string"
-              }
-            }
-          },
-          "images": {
-            "maxItems": 20,
-            "type": "array",
-            "items": {
-              "minLength": 1,
-              "maxLength": 2048,
-              "pattern": "^(https://|\\./|/)",
-              "type": "string"
-            }
-          },
-          "available": {
-            "type": "boolean"
-          }
-        }
-      }
-    },
-    "business": {
-      "additionalProperties": false,
-      "type": "object",
-      "properties": {
-        "positioningStatement": {
-          "minLength": 1,
-          "maxLength": 320,
-          "type": "string"
-        },
-        "audience": {
-          "minLength": 1,
-          "maxLength": 160,
-          "type": "string"
-        },
-        "primaryProblem": {
-          "minLength": 1,
-          "maxLength": 160,
-          "type": "string"
-        },
-        "solution": {
-          "minLength": 1,
-          "maxLength": 240,
-          "type": "string"
-        },
-        "targetMarket": {
-          "minLength": 1,
-          "maxLength": 160,
-          "type": "string"
-        },
-        "primaryOutcome": {
-          "minLength": 1,
-          "maxLength": 240,
-          "type": "string"
-        }
-      }
-    },
-    "services": {
-      "maxItems": 500,
-      "type": "array",
-      "items": {
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "id",
-          "title"
-        ],
-        "properties": {
-          "id": {
-            "minLength": 1,
-            "maxLength": 120,
-            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
-            "type": "string"
-          },
-          "title": {
-            "minLength": 1,
-            "maxLength": 160,
-            "type": "string"
-          },
-          "description": {
-            "minLength": 1,
-            "maxLength": 1000,
-            "type": "string"
-          },
-          "url": {
-            "minLength": 1,
-            "maxLength": 2048,
-            "pattern": "^(https://|\\./|/)",
-            "type": "string"
-          },
-          "sessionType": {
-            "minLength": 1,
-            "maxLength": 160,
-            "type": "string"
-          },
-          "durationMinutes": {
-            "exclusiveMinimum": 0,
-            "type": "number"
-          },
-          "price": {
-            "additionalProperties": false,
-            "description": "A non-negative decimal amount in major currency units and an ISO 4217 currency code.",
-            "type": "object",
-            "required": [
-              "amount",
-              "currency"
-            ],
-            "properties": {
-              "amount": {
-                "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$",
-                "type": "string"
+              "price": {
+                "additionalProperties": false,
+                "description": "A non-negative decimal amount in major currency units and an ISO 4217 currency code.",
+                "type": "object",
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "properties": {
+                  "amount": {
+                    "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$",
+                    "type": "string"
+                  },
+                  "currency": {
+                    "pattern": "^[A-Z]{3}$",
+                    "type": "string"
+                  }
+                }
               },
-              "currency": {
-                "pattern": "^[A-Z]{3}$",
-                "type": "string"
-              }
-            }
-          },
-          "whoItsFor": {
-            "maxItems": 30,
-            "type": "array",
-            "items": {
-              "minLength": 1,
-              "maxLength": 160,
-              "type": "string"
-            }
-          },
-          "outcomes": {
-            "maxItems": 30,
-            "type": "array",
-            "items": {
-              "minLength": 1,
-              "maxLength": 160,
-              "type": "string"
-            }
-          },
-          "availability": {
-            "anyOf": [
-              {
-                "const": "calendar",
-                "type": "string"
-              },
-              {
-                "const": "external",
-                "type": "string"
-              },
-              {
-                "const": "manual",
-                "type": "string"
-              }
-            ]
-          },
-          "status": {
-            "anyOf": [
-              {
-                "const": "active",
-                "type": "string"
-              },
-              {
-                "const": "paused",
-                "type": "string"
-              }
-            ]
-          }
-        }
-      }
-    },
-    "actions": {
-      "additionalProperties": false,
-      "type": "object",
-      "patternProperties": {
-        "^[A-Za-z0-9][A-Za-z0-9._:-]*$": {
-          "anyOf": [
-            {
-              "additionalProperties": false,
-              "description": "A human-facing HTTPS flow.",
-              "type": "object",
-              "required": [
-                "type",
-                "url"
-              ],
-              "properties": {
-                "type": {
-                  "const": "link",
-                  "type": "string"
-                },
-                "url": {
-                  "minLength": 9,
-                  "maxLength": 2048,
-                  "pattern": "^https://",
-                  "type": "string"
-                },
-                "description": {
+              "images": {
+                "maxItems": 20,
+                "type": "array",
+                "items": {
                   "minLength": 1,
-                  "maxLength": 1000,
+                  "maxLength": 2048,
+                  "pattern": "^(https://|\\./|/)",
                   "type": "string"
                 }
+              },
+              "available": {
+                "type": "boolean"
               }
+            }
+          }
+        },
+        "business": {
+          "additionalProperties": false,
+          "type": "object",
+          "properties": {
+            "positioningStatement": {
+              "minLength": 1,
+              "maxLength": 320,
+              "type": "string"
             },
-            {
+            "audience": {
+              "minLength": 1,
+              "maxLength": 160,
+              "type": "string"
+            },
+            "primaryProblem": {
+              "minLength": 1,
+              "maxLength": 160,
+              "type": "string"
+            },
+            "solution": {
+              "minLength": 1,
+              "maxLength": 240,
+              "type": "string"
+            },
+            "targetMarket": {
+              "minLength": 1,
+              "maxLength": 160,
+              "type": "string"
+            },
+            "primaryOutcome": {
+              "minLength": 1,
+              "maxLength": 240,
+              "type": "string"
+            }
+          }
+        },
+        "services": {
+          "maxItems": 500,
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "id",
+              "title"
+            ],
+            "properties": {
+              "id": {
+                "minLength": 1,
+                "maxLength": 120,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+                "type": "string"
+              },
+              "title": {
+                "minLength": 1,
+                "maxLength": 160,
+                "type": "string"
+              },
+              "description": {
+                "minLength": 1,
+                "maxLength": 1000,
+                "type": "string"
+              },
+              "url": {
+                "minLength": 1,
+                "maxLength": 2048,
+                "pattern": "^(https://|\\./|/)",
+                "type": "string"
+              },
+              "sessionType": {
+                "minLength": 1,
+                "maxLength": 160,
+                "type": "string"
+              },
+              "durationMinutes": {
+                "exclusiveMinimum": 0,
+                "type": "number"
+              },
+              "price": {
+                "additionalProperties": false,
+                "description": "A non-negative decimal amount in major currency units and an ISO 4217 currency code.",
+                "type": "object",
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "properties": {
+                  "amount": {
+                    "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$",
+                    "type": "string"
+                  },
+                  "currency": {
+                    "pattern": "^[A-Z]{3}$",
+                    "type": "string"
+                  }
+                }
+              },
+              "whoItsFor": {
+                "maxItems": 30,
+                "type": "array",
+                "items": {
+                  "minLength": 1,
+                  "maxLength": 160,
+                  "type": "string"
+                }
+              },
+              "outcomes": {
+                "maxItems": 30,
+                "type": "array",
+                "items": {
+                  "minLength": 1,
+                  "maxLength": 160,
+                  "type": "string"
+                }
+              },
+              "availability": {
+                "anyOf": [
+                  {
+                    "const": "calendar",
+                    "type": "string"
+                  },
+                  {
+                    "const": "external",
+                    "type": "string"
+                  },
+                  {
+                    "const": "manual",
+                    "type": "string"
+                  }
+                ]
+              },
+              "status": {
+                "anyOf": [
+                  {
+                    "const": "active",
+                    "type": "string"
+                  },
+                  {
+                    "const": "paused",
+                    "type": "string"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "actions": {
+          "additionalProperties": false,
+          "type": "object",
+          "patternProperties": {
+            "^[A-Za-z0-9][A-Za-z0-9._:-]*$": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "description": "A human-facing HTTPS flow.",
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "url"
+                  ],
+                  "properties": {
+                    "type": {
+                      "const": "link",
+                      "type": "string"
+                    },
+                    "url": {
+                      "minLength": 9,
+                      "maxLength": 2048,
+                      "pattern": "^https://",
+                      "type": "string"
+                    },
+                    "description": {
+                      "minLength": 1,
+                      "maxLength": 1000,
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "additionalProperties": false,
+                  "description": "An operation described by a public OpenAPI document. Discovery does not grant authority to invoke it.",
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "spec",
+                    "operationId"
+                  ],
+                  "properties": {
+                    "type": {
+                      "const": "openapi",
+                      "type": "string"
+                    },
+                    "spec": {
+                      "minLength": 9,
+                      "maxLength": 2048,
+                      "pattern": "^https://",
+                      "type": "string"
+                    },
+                    "operationId": {
+                      "minLength": 1,
+                      "maxLength": 120,
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+                      "type": "string"
+                    },
+                    "description": {
+                      "minLength": 1,
+                      "maxLength": 1000,
+                      "type": "string"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "capabilities": {
+          "additionalProperties": false,
+          "type": "object",
+          "patternProperties": {
+            "^[A-Za-z0-9][A-Za-z0-9._:-]*$": {
               "additionalProperties": false,
-              "description": "An operation described by a public OpenAPI document. Discovery does not grant authority to invoke it.",
               "type": "object",
               "required": [
-                "type",
-                "spec",
-                "operationId"
+                "action"
               ],
               "properties": {
-                "type": {
-                  "const": "openapi",
-                  "type": "string"
-                },
-                "spec": {
-                  "minLength": 9,
-                  "maxLength": 2048,
-                  "pattern": "^https://",
-                  "type": "string"
-                },
-                "operationId": {
+                "action": {
                   "minLength": 1,
                   "maxLength": 120,
                   "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
                   "type": "string"
                 },
+                "title": {
+                  "minLength": 1,
+                  "maxLength": 160,
+                  "type": "string"
+                },
                 "description": {
                   "minLength": 1,
                   "maxLength": 1000,
                   "type": "string"
+                },
+                "offeringIds": {
+                  "maxItems": 100,
+                  "uniqueItems": true,
+                  "type": "array",
+                  "items": {
+                    "minLength": 1,
+                    "maxLength": 120,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+                    "type": "string"
+                  }
                 }
               }
             }
-          ]
-        }
-      }
-    },
-    "capabilities": {
-      "additionalProperties": false,
-      "type": "object",
-      "patternProperties": {
-        "^[A-Za-z0-9][A-Za-z0-9._:-]*$": {
+          }
+        },
+        "extensions": {
           "additionalProperties": false,
           "type": "object",
-          "required": [
-            "action"
-          ],
-          "properties": {
-            "action": {
-              "minLength": 1,
-              "maxLength": 120,
-              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
-              "type": "string"
-            },
-            "title": {
-              "minLength": 1,
-              "maxLength": 160,
-              "type": "string"
-            },
-            "description": {
-              "minLength": 1,
-              "maxLength": 1000,
-              "type": "string"
-            },
-            "offeringIds": {
-              "maxItems": 100,
-              "uniqueItems": true,
-              "type": "array",
-              "items": {
-                "minLength": 1,
-                "maxLength": 120,
-                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
-                "type": "string"
-              }
+          "patternProperties": {
+            "^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?/[A-Za-z0-9][A-Za-z0-9._-]*$": {
+              "$id": "T0",
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "T0"
+                  }
+                },
+                {
+                  "type": "object",
+                  "patternProperties": {
+                    "^(.*)$": {
+                      "$ref": "T0"
+                    }
+                  }
+                }
+              ]
             }
           }
         }
       }
     },
-    "extensions": {
+    {
+      "title": "Private me3 Profile Projection 0.3",
+      "description": "A minimal safe public identity projection. Full private content requires a separate authenticated endpoint.",
       "additionalProperties": false,
       "type": "object",
-      "patternProperties": {
-        "^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?/[A-Za-z0-9][A-Za-z0-9._-]*$": {
-          "$id": "T0",
+      "required": [
+        "version",
+        "kind",
+        "visibility",
+        "name"
+      ],
+      "properties": {
+        "$schema": {
+          "const": "https://unpkg.com/me3-protocol@4.0.0/schema.json",
+          "type": "string"
+        },
+        "version": {
+          "const": "0.3",
+          "type": "string"
+        },
+        "kind": {
           "anyOf": [
             {
+              "const": "person",
               "type": "string"
             },
             {
-              "type": "number"
+              "const": "organization",
+              "type": "string"
             },
             {
-              "type": "boolean"
+              "const": "application",
+              "type": "string"
             },
             {
-              "type": "null"
-            },
-            {
-              "type": "array",
-              "items": {
-                "$ref": "T0"
-              }
-            },
-            {
-              "type": "object",
-              "patternProperties": {
-                "^(.*)$": {
-                  "$ref": "T0"
-                }
-              }
+              "const": "agent",
+              "type": "string"
             }
           ]
+        },
+        "visibility": {
+          "const": "private",
+          "type": "string"
+        },
+        "name": {
+          "minLength": 1,
+          "maxLength": 100,
+          "type": "string"
+        },
+        "handle": {
+          "minLength": 1,
+          "maxLength": 60,
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "type": "string"
+        },
+        "avatar": {
+          "minLength": 1,
+          "maxLength": 2048,
+          "pattern": "^(https://|\\./|/)",
+          "type": "string"
         }
       }
     }
-  }
+  ]
 }

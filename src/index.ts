@@ -1,10 +1,13 @@
 import { Static, Type } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
 
-export const ME3_VERSION = "0.2" as const;
+export const ME3_VERSION = "0.3" as const;
+export const ME3_LEGACY_VERSION = "0.2" as const;
 export const ME3_FILENAME = "me.json" as const;
 export const ME3_WELL_KNOWN_PATH = "/.well-known/me.json" as const;
 export const ME3_SCHEMA_URL =
+  "https://unpkg.com/me3-protocol@4.0.0/schema.json" as const;
+export const ME3_LEGACY_SCHEMA_URL =
   "https://unpkg.com/me3-protocol@3.0.0/schema.json" as const;
 
 const ID_PATTERN = "^[A-Za-z0-9][A-Za-z0-9._:-]*$";
@@ -254,76 +257,130 @@ export const Me3CapabilitySchema = Type.Object(
 );
 export type Me3Capability = Static<typeof Me3CapabilitySchema>;
 
-export const Me3ProfileSchema = Type.Object(
+const ProfileKind = Type.Union([
+  Type.Literal("person"),
+  Type.Literal("organization"),
+  Type.Literal("application"),
+  Type.Literal("agent"),
+]);
+const ProfileName = Type.String({ minLength: 1, maxLength: 100 });
+const ProfileHandle = Type.Optional(
+  Type.String({
+    minLength: 1,
+    maxLength: 60,
+    pattern: "^[A-Za-z0-9_-]+$",
+  }),
+);
+
+const FullProfileProperties = {
+  id: Type.Optional(Uri),
+  url: Type.Optional(HttpsUri),
+  handle: ProfileHandle,
+  bio: Type.Optional(Type.String({ minLength: 1, maxLength: 500 })),
+  avatar: Type.Optional(AssetReference),
+  banner: Type.Optional(AssetReference),
+  location: Type.Optional(Type.String({ minLength: 1, maxLength: 160 })),
+  locationData: Type.Optional(Me3LocationDataSchema),
+  links: Type.Optional(Type.Array(Me3LinkSchema, { maxItems: 100 })),
+  pages: Type.Optional(Type.Array(Me3PageSchema, { maxItems: 500 })),
+  posts: Type.Optional(Type.Array(Me3PostSchema, { maxItems: 5000 })),
+  products: Type.Optional(Type.Array(Me3ProductSchema, { maxItems: 500 })),
+  business: Type.Optional(Me3BusinessContextSchema),
+  services: Type.Optional(Type.Array(Me3ServiceSchema, { maxItems: 500 })),
+  actions: Type.Optional(
+    Type.Record(Type.String({ pattern: ID_PATTERN }), Me3ActionDefinitionSchema, {
+      additionalProperties: false,
+    }),
+  ),
+  capabilities: Type.Optional(
+    Type.Record(Type.String({ pattern: ID_PATTERN }), Me3CapabilitySchema, {
+      additionalProperties: false,
+    }),
+  ),
+  extensions: Type.Optional(
+    Type.Record(Type.String({ pattern: EXTENSION_KEY_PATTERN }), JsonValue, {
+      additionalProperties: false,
+    }),
+  ),
+};
+
+export const Me3PublicProfileSchema = Type.Object(
   {
     $schema: Type.Optional(Type.Literal(ME3_SCHEMA_URL)),
     version: Type.Literal(ME3_VERSION),
-    kind: Type.Union([
-      Type.Literal("person"),
-      Type.Literal("organization"),
-      Type.Literal("application"),
-      Type.Literal("agent"),
-    ]),
-    name: Type.String({ minLength: 1, maxLength: 100 }),
-    id: Type.Optional(Uri),
-    url: Type.Optional(HttpsUri),
-    handle: Type.Optional(
-      Type.String({
-        minLength: 1,
-        maxLength: 60,
-        pattern: "^[A-Za-z0-9_-]+$",
-      }),
-    ),
-    bio: Type.Optional(Type.String({ minLength: 1, maxLength: 500 })),
-    avatar: Type.Optional(AssetReference),
-    banner: Type.Optional(AssetReference),
-    location: Type.Optional(Type.String({ minLength: 1, maxLength: 160 })),
-    locationData: Type.Optional(Me3LocationDataSchema),
-    links: Type.Optional(Type.Array(Me3LinkSchema, { maxItems: 100 })),
-    pages: Type.Optional(Type.Array(Me3PageSchema, { maxItems: 500 })),
-    posts: Type.Optional(Type.Array(Me3PostSchema, { maxItems: 5000 })),
-    products: Type.Optional(Type.Array(Me3ProductSchema, { maxItems: 500 })),
-    business: Type.Optional(Me3BusinessContextSchema),
-    services: Type.Optional(Type.Array(Me3ServiceSchema, { maxItems: 500 })),
-    actions: Type.Optional(
-      Type.Record(
-        Type.String({ pattern: ID_PATTERN }),
-        Me3ActionDefinitionSchema,
-        { additionalProperties: false },
-      ),
-    ),
-    capabilities: Type.Optional(
-      Type.Record(Type.String({ pattern: ID_PATTERN }), Me3CapabilitySchema, {
-        additionalProperties: false,
-      }),
-    ),
-    extensions: Type.Optional(
-      Type.Record(
-        Type.String({ pattern: EXTENSION_KEY_PATTERN }),
-        JsonValue,
-        { additionalProperties: false },
-      ),
-    ),
+    kind: ProfileKind,
+    visibility: Type.Literal("public"),
+    name: ProfileName,
+    ...FullProfileProperties,
   },
   {
-    $id: "urn:me3:protocol:0.2",
-    title: "me3 Protocol Profile 0.2",
-    description:
-      "A portable public identity, content, offering, and capability manifest.",
+    title: "Public me3 Profile 0.3",
+    description: "The full public profile and capability manifest.",
     additionalProperties: false,
   },
 );
+export type Me3PublicProfile = Static<typeof Me3PublicProfileSchema>;
+
+export const Me3PrivateProfileSchema = Type.Object(
+  {
+    $schema: Type.Optional(Type.Literal(ME3_SCHEMA_URL)),
+    version: Type.Literal(ME3_VERSION),
+    kind: ProfileKind,
+    visibility: Type.Literal("private"),
+    name: ProfileName,
+    handle: ProfileHandle,
+    avatar: Type.Optional(AssetReference),
+  },
+  {
+    title: "Private me3 Profile Projection 0.3",
+    description:
+      "A minimal safe public identity projection. Full private content requires a separate authenticated endpoint.",
+    additionalProperties: false,
+  },
+);
+export type Me3PrivateProfile = Static<typeof Me3PrivateProfileSchema>;
+
+export const Me3ProfileSchema = Type.Union(
+  [Me3PublicProfileSchema, Me3PrivateProfileSchema],
+  {
+    $id: "urn:me3:protocol:0.3",
+    title: "me3 Protocol Profile 0.3",
+    description:
+      "A visibility-aware portable public profile and capability manifest.",
+  },
+);
 export type Me3Profile = Static<typeof Me3ProfileSchema>;
+
+export const Me3LegacyProfileSchema = Type.Object(
+  {
+    $schema: Type.Optional(Type.Literal(ME3_LEGACY_SCHEMA_URL)),
+    version: Type.Literal(ME3_LEGACY_VERSION),
+    kind: ProfileKind,
+    name: ProfileName,
+    ...FullProfileProperties,
+  },
+  {
+    title: "Legacy me3 Protocol Profile 0.2",
+    additionalProperties: false,
+  },
+);
+export type Me3LegacyProfile = Static<typeof Me3LegacyProfileSchema>;
+
+export const Me3CompatibleProfileSchema = Type.Union([
+  Me3ProfileSchema,
+  Me3LegacyProfileSchema,
+]);
+export type Me3CompatibleProfile = Static<typeof Me3CompatibleProfileSchema>;
 
 export interface ValidationError {
   field: string;
   message: string;
 }
 
-export interface ValidationResult {
+export interface ValidationResult<TProfile = Me3CompatibleProfile> {
   valid: boolean;
   errors: ValidationError[];
-  profile?: Me3Profile;
+  profile?: TProfile;
 }
 
 function fieldFromJsonPointer(path: string): string {
@@ -345,13 +402,15 @@ function fieldFromJsonPointer(path: string): string {
   );
 }
 
-function semanticErrors(profile: Me3Profile): ValidationError[] {
+function semanticErrors(profile: Me3CompatibleProfile): ValidationError[] {
   const errors: ValidationError[] = [];
   const offeringIds = new Set<string>();
+  const services = "services" in profile ? profile.services || [] : [];
+  const products = "products" in profile ? profile.products || [] : [];
 
   for (const [collection, offerings] of [
-    ["services", profile.services || []],
-    ["products", profile.products || []],
+    ["services", services],
+    ["products", products],
   ] as const) {
     offerings.forEach((offering, index) => {
       if (offeringIds.has(offering.id)) {
@@ -364,8 +423,10 @@ function semanticErrors(profile: Me3Profile): ValidationError[] {
     });
   }
 
-  const actions = profile.actions || {};
-  for (const [name, capability] of Object.entries(profile.capabilities || {})) {
+  const actions = "actions" in profile ? profile.actions || {} : {};
+  const capabilities =
+    "capabilities" in profile ? profile.capabilities || {} : {};
+  for (const [name, capability] of Object.entries(capabilities)) {
     if (!(capability.action in actions)) {
       errors.push({
         field: `capabilities.${name}.action`,
@@ -386,7 +447,7 @@ function semanticErrors(profile: Me3Profile): ValidationError[] {
   return errors;
 }
 
-export function validateProfile(data: unknown): ValidationResult {
+export function validateProfile(data: unknown): ValidationResult<Me3Profile> {
   const errors = Array.from(Value.Errors(Me3ProfileSchema, data), (error) => ({
     field: fieldFromJsonPointer(error.path),
     message: error.message,
@@ -401,9 +462,29 @@ export function validateProfile(data: unknown): ValidationResult {
   return { valid: true, errors: [], profile };
 }
 
+export function validateCompatibleProfile(
+  data: unknown,
+): ValidationResult<Me3CompatibleProfile> {
+  const errors = Array.from(
+    Value.Errors(Me3CompatibleProfileSchema, data),
+    (error) => ({
+      field: fieldFromJsonPointer(error.path),
+      message: error.message,
+    }),
+  );
+
+  if (errors.length > 0) return { valid: false, errors };
+
+  const profile = data as Me3CompatibleProfile;
+  const references = semanticErrors(profile);
+  if (references.length > 0) return { valid: false, errors: references };
+
+  return { valid: true, errors: [], profile };
+}
+
 export function parseMe3Json(jsonString: string): ValidationResult {
   try {
-    return validateProfile(JSON.parse(jsonString));
+    return validateCompatibleProfile(JSON.parse(jsonString));
   } catch {
     return {
       valid: false,

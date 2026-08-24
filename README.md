@@ -10,9 +10,10 @@ It is discovery data. It is not authentication, authorization, delegation, priva
 
 ```json
 {
-  "$schema": "https://unpkg.com/me3-protocol@3.0.0/schema.json",
-  "version": "0.2",
+  "$schema": "https://unpkg.com/me3-protocol@4.0.0/schema.json",
+  "version": "0.3",
   "kind": "person",
+  "visibility": "public",
   "id": "https://janedoe.example/me.json",
   "url": "https://janedoe.example/",
   "name": "Jane Doe",
@@ -58,8 +59,9 @@ The required fields are:
 
 | Field | Purpose |
 | --- | --- |
-| `version` | Protocol compatibility version; currently `0.2`. |
+| `version` | Protocol compatibility version; currently `0.3`. |
 | `kind` | `person`, `organization`, `application`, or `agent`. |
+| `visibility` | `public` for a full manifest or `private` for the safe identity projection. |
 | `name` | Public display name. |
 
 The optional public areas are:
@@ -77,6 +79,23 @@ The optional public areas are:
 | `extensions` | Namespaced experimental public data. |
 
 Objects are strict: unknown fields are invalid everywhere except inside `extensions`. Extension keys use an owner namespace such as `example.com/presentation`.
+
+### Profile visibility
+
+`visibility: "public"` publishes the normal full manifest. `visibility: "private"` publishes only the protocol fields plus `name` and optional `handle` and `avatar`:
+
+```json
+{
+  "version": "0.3",
+  "kind": "person",
+  "visibility": "private",
+  "name": "Jane Doe",
+  "handle": "janedoe",
+  "avatar": "./files/avatar.jpg"
+}
+```
+
+A private projection cannot contain bio, banner, location, links or contact details, business context, pages, posts, products, services, actions, capabilities, or extensions. Full private content belongs behind a separate authenticated, audience-bound endpoint. It must never be returned from public `me.json` or stored in a public cache.
 
 ## Money
 
@@ -145,7 +164,7 @@ Consumers should apply response-size limits, short timeouts, safe redirect handl
 ## Install and validate
 
 ```bash
-npm install me3-protocol@^3
+npm install me3-protocol@^4
 ```
 
 ```typescript
@@ -165,10 +184,16 @@ The package exports the inferred TypeScript types, runtime schemas, validators, 
 
 The document protocol version and npm package version are independent:
 
-- protocol `0.2` describes document compatibility;
-- npm `3.0.0` marks the breaking TypeScript and validator release.
+- protocol `0.3` adds portable `public`/`private` visibility semantics;
+- npm `4.0.0` marks the required field and current-schema validation boundary.
 
-Readers migrating existing installations should temporarily support both `0.1` and `0.2`, while new publishers should emit only `0.2`.
+`parseMe3Json` accepts both legacy `0.2` and current `0.3` documents during migration. `validateProfile` validates only current `0.3` documents, so new publishers cannot omit visibility or invent another value.
+
+### Migrating from `0.2`
+
+- Emit protocol `0.3` and add `visibility: "public"` to an existing public manifest.
+- For a private profile, publish only the minimal safe projection described above.
+- Serve full private content only from a separate authenticated endpoint with private, non-shared caching.
 
 ### Migrating from `0.1`
 

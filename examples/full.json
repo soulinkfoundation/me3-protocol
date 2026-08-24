@@ -1,7 +1,8 @@
 {
-  "$schema": "https://unpkg.com/me3-protocol@3.0.0/schema.json",
-  "version": "0.2",
+  "$schema": "https://unpkg.com/me3-protocol@4.0.0/schema.json",
+  "version": "0.3",
   "kind": "person",
+  "visibility": "public",
   "id": "https://example.com/me.json",
   "url": "https://example.com/",
   "name": "Example Name",

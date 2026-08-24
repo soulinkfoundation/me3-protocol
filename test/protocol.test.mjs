@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 
 import {
   ME3_SCHEMA_URL,
+  ME3_LEGACY_VERSION,
   ME3_VERSION,
   ME3_WELL_KNOWN_PATH,
   Me3ProfileSchema,
@@ -12,23 +13,25 @@ import {
 } from "../dist/index.js";
 
 const profile = (overrides = {}) => ({
-  version: "0.2",
+  version: "0.3",
   kind: "person",
+  visibility: "public",
   name: "Jane Doe",
   ...overrides,
 });
 
-test("exports the 0.2 protocol constants", () => {
-  assert.equal(ME3_VERSION, "0.2");
+test("exports the 0.3 protocol constants", () => {
+  assert.equal(ME3_VERSION, "0.3");
+  assert.equal(ME3_LEGACY_VERSION, "0.2");
   assert.equal(ME3_WELL_KNOWN_PATH, "/.well-known/me.json");
   assert.equal(
     ME3_SCHEMA_URL,
-    "https://unpkg.com/me3-protocol@3.0.0/schema.json",
+    "https://unpkg.com/me3-protocol@4.0.0/schema.json",
   );
 });
 
 test("simple and full examples satisfy runtime validation", async () => {
-  for (const filename of ["simple.json", "full.json"]) {
+  for (const filename of ["simple.json", "full.json", "private.json"]) {
     const json = await readFile(new URL(`../examples/${filename}`, import.meta.url), "utf8");
     const result = parseMe3Json(json);
     assert.equal(result.valid, true, `${filename}: ${JSON.stringify(result.errors)}`);
@@ -43,17 +46,68 @@ test("tracked JSON Schema is generated from the runtime schema", async () => {
     $schema: "https://json-schema.org/draft/2020-12/schema",
     ...JSON.parse(JSON.stringify(Me3ProfileSchema)),
   });
-  assert.equal(tracked.additionalProperties, false);
+  assert.equal(tracked.anyOf.length, 2);
+  assert.equal(
+    tracked.anyOf.every((branch) => branch.additionalProperties === false),
+    true,
+  );
 });
 
-test("rejects 0.1 documents and undeclared runtime or verification fields", () => {
+test("current validation requires 0.3 visibility and rejects undeclared fields", () => {
   for (const value of [
     { version: "0.1", name: "Jane Doe" },
+    { version: "0.3", kind: "person", name: "Jane Doe" },
+    { version: "0.3", kind: "person", visibility: "friends", name: "Jane Doe" },
+    { version: "0.2", kind: "person", name: "Jane Doe" },
     profile({ verification: { verified: true } }),
     profile({ blogEnabled: true }),
     profile({ links: { website: "https://example.com" } }),
   ]) {
     assert.equal(validateProfile(value).valid, false);
+  }
+});
+
+test("compatibility parsing accepts legacy 0.2 documents", () => {
+  const result = parseMe3Json(
+    JSON.stringify({
+      version: "0.2",
+      kind: "person",
+      name: "Legacy Jane",
+      bio: "A previously public profile.",
+    }),
+  );
+  assert.equal(result.valid, true);
+  assert.equal(result.profile?.version, "0.2");
+});
+
+test("private profiles allow only the safe public identity projection", () => {
+  const safe = profile({
+    visibility: "private",
+    handle: "janedoe",
+    avatar: "./files/avatar.jpg",
+  });
+  assert.equal(validateProfile(safe).valid, true);
+
+  for (const privateField of [
+    { bio: "Private bio" },
+    { banner: "./files/banner.jpg" },
+    { links: [{ rel: "email", href: "mailto:jane@example.com" }] },
+    { pages: [{ id: "about", title: "About", url: "./about" }] },
+    { posts: [] },
+    { products: [] },
+    { services: [] },
+    { business: {} },
+    { location: "Cork" },
+    { locationData: { label: "Cork", latitude: 51.9, longitude: -8.4, precision: "city" } },
+    { actions: {} },
+    { capabilities: {} },
+    { extensions: { "example.com/private": true } },
+  ]) {
+    assert.equal(
+      validateProfile({ ...safe, ...privateField }).valid,
+      false,
+      `private field leaked: ${Object.keys(privateField)[0]}`,
+    );
   }
 });
 
