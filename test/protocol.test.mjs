@@ -26,7 +26,7 @@ test("exports the 0.3 protocol constants", () => {
   assert.equal(ME3_WELL_KNOWN_PATH, "/.well-known/me.json");
   assert.equal(
     ME3_SCHEMA_URL,
-    "https://unpkg.com/me3-protocol@4.0.0/schema.json",
+    "https://unpkg.com/me3-protocol@4.0.1/schema.json",
   );
 });
 
@@ -85,12 +85,12 @@ test("private profiles allow only the safe public identity projection", () => {
     visibility: "private",
     handle: "janedoe",
     avatar: "./files/avatar.jpg",
+    banner: "./files/banner.jpg",
   });
   assert.equal(validateProfile(safe).valid, true);
 
   for (const privateField of [
     { bio: "Private bio" },
-    { banner: "./files/banner.jpg" },
     { links: [{ rel: "email", href: "mailto:jane@example.com" }] },
     { pages: [{ id: "about", title: "About", url: "./about" }] },
     { posts: [] },

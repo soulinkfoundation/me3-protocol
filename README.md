@@ -10,7 +10,7 @@ It is discovery data. It is not authentication, authorization, delegation, priva
 
 ```json
 {
-  "$schema": "https://unpkg.com/me3-protocol@4.0.0/schema.json",
+  "$schema": "https://unpkg.com/me3-protocol@4.0.1/schema.json",
   "version": "0.3",
   "kind": "person",
   "visibility": "public",
@@ -82,7 +82,7 @@ Objects are strict: unknown fields are invalid everywhere except inside `extensi
 
 ### Profile visibility
 
-`visibility: "public"` publishes the normal full manifest. `visibility: "private"` publishes only the protocol fields plus `name` and optional `handle` and `avatar`:
+`visibility: "public"` publishes the normal full manifest. `visibility: "private"` publishes only the protocol fields plus `name` and optional `handle`, `avatar`, and `banner`:
 
 ```json
 {
@@ -91,11 +91,12 @@ Objects are strict: unknown fields are invalid everywhere except inside `extensi
   "visibility": "private",
   "name": "Jane Doe",
   "handle": "janedoe",
-  "avatar": "./files/avatar.jpg"
+  "avatar": "./files/avatar.jpg",
+  "banner": "./files/banner.jpg"
 }
 ```
 
-A private projection cannot contain bio, banner, location, links or contact details, business context, pages, posts, products, services, actions, capabilities, or extensions. Full private content belongs behind a separate authenticated, audience-bound endpoint. It must never be returned from public `me.json` or stored in a public cache.
+A private projection cannot contain bio, location, links or contact details, business context, pages, posts, products, services, actions, capabilities, or extensions. The avatar and banner remain public identity presentation. Full private content belongs behind a separate authenticated, audience-bound endpoint. It must never be returned from public `me.json` or stored in a public cache.
 
 ## Money
 
@@ -186,6 +187,7 @@ The document protocol version and npm package version are independent:
 
 - protocol `0.3` adds portable `public`/`private` visibility semantics;
 - npm `4.0.0` marks the required field and current-schema validation boundary.
+- npm `4.0.1` adds `banner` to the safe private identity projection.
 
 `parseMe3Json` accepts both legacy `0.2` and current `0.3` documents during migration. `validateProfile` validates only current `0.3` documents, so new publishers cannot omit visibility or invent another value.
 

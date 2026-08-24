@@ -1,9 +1,10 @@
 {
-  "$schema": "https://unpkg.com/me3-protocol@4.0.0/schema.json",
+  "$schema": "https://unpkg.com/me3-protocol@4.0.1/schema.json",
   "version": "0.3",
   "kind": "person",
   "visibility": "private",
   "name": "Jane Doe",
   "handle": "janedoe",
-  "avatar": "./files/avatar.jpg"
+  "avatar": "./files/avatar.jpg",
+  "banner": "./files/banner.jpg"
 }

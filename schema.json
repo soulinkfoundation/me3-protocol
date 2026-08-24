@@ -17,7 +17,7 @@
       ],
       "properties": {
         "$schema": {
-          "const": "https://unpkg.com/me3-protocol@4.0.0/schema.json",
+          "const": "https://unpkg.com/me3-protocol@4.0.1/schema.json",
           "type": "string"
         },
         "version": {
@@ -714,7 +714,7 @@
       ],
       "properties": {
         "$schema": {
-          "const": "https://unpkg.com/me3-protocol@4.0.0/schema.json",
+          "const": "https://unpkg.com/me3-protocol@4.0.1/schema.json",
           "type": "string"
         },
         "version": {
@@ -757,6 +757,12 @@
           "type": "string"
         },
         "avatar": {
+          "minLength": 1,
+          "maxLength": 2048,
+          "pattern": "^(https://|\\./|/)",
+          "type": "string"
+        },
+        "banner": {
           "minLength": 1,
           "maxLength": 2048,
           "pattern": "^(https://|\\./|/)",

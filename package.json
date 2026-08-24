@@ -1,6 +1,6 @@
 {
   "name": "me3-protocol",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "Public me.json types, validation, schema, and examples for the ME3 ecosystem.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

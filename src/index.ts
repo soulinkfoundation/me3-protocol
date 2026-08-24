@@ -6,7 +6,7 @@ export const ME3_LEGACY_VERSION = "0.2" as const;
 export const ME3_FILENAME = "me.json" as const;
 export const ME3_WELL_KNOWN_PATH = "/.well-known/me.json" as const;
 export const ME3_SCHEMA_URL =
-  "https://unpkg.com/me3-protocol@4.0.0/schema.json" as const;
+  "https://unpkg.com/me3-protocol@4.0.1/schema.json" as const;
 export const ME3_LEGACY_SCHEMA_URL =
   "https://unpkg.com/me3-protocol@3.0.0/schema.json" as const;
 
@@ -330,6 +330,7 @@ export const Me3PrivateProfileSchema = Type.Object(
     name: ProfileName,
     handle: ProfileHandle,
     avatar: Type.Optional(AssetReference),
+    banner: Type.Optional(AssetReference),
   },
   {
     title: "Private me3 Profile Projection 0.3",
