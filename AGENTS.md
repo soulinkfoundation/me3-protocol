@@ -9,9 +9,9 @@
 ## Ecosystem Source Of Truth
 
 - Canonical high-level ecosystem docs live at `/Users/kieranbutler/Coding/docs`.
-- Read `/Users/kieranbutler/Coding/docs/ecosystem.md` before strategic or cross-app work, then read the relevant project brief under `/Users/kieranbutler/Coding/docs/projects`.
+- Read `/Users/kieranbutler/Coding/docs/README.md` and `/Users/kieranbutler/Coding/docs/projects/me3-protocol.md` before strategic or cross-app work.
 - Durable architecture and product boundaries belong in these docs. Actionable plans and execution history belong in the owning repository's issue tracker or beads database.
-- The active ecosystem repositories are ME3, ME3 Cloud (`me3-app`), `me3-protocol`, `me3-ios`, and Soulink.
+- The current product and repository map lives in `/Users/kieranbutler/Coding/docs/README.md`; do not infer it from historical folders or duplicate the list here.
 
 ## Verification
 
