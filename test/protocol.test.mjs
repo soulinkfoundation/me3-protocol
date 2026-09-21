@@ -67,6 +67,15 @@ test("current validation requires 0.3 visibility and rejects undeclared fields",
   }
 });
 
+test("bio accepts rich-text markup within the profile's text-length budget", () => {
+  const formattedBio = `<p>${Array.from(
+    { length: 100 },
+    () => '<a href="https://example.com/about">x</a>',
+  ).join(" ")}</p>`;
+  assert.ok(formattedBio.length > 500);
+  assert.equal(validateProfile(profile({ bio: formattedBio })).valid, true);
+});
+
 test("compatibility parsing accepts legacy 0.2 documents", () => {
   const result = parseMe3Json(
     JSON.stringify({

@@ -276,7 +276,7 @@ const FullProfileProperties = {
   id: Type.Optional(Uri),
   url: Type.Optional(HttpsUri),
   handle: ProfileHandle,
-  bio: Type.Optional(Type.String({ minLength: 1, maxLength: 500 })),
+  bio: Type.Optional(Type.String({ minLength: 1, maxLength: 16384 })),
   avatar: Type.Optional(AssetReference),
   banner: Type.Optional(AssetReference),
   location: Type.Optional(Type.String({ minLength: 1, maxLength: 160 })),

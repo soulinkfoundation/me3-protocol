@@ -73,7 +73,7 @@
         },
         "bio": {
           "minLength": 1,
-          "maxLength": 500,
+          "maxLength": 16384,
           "type": "string"
         },
         "avatar": {
