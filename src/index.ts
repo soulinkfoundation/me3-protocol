@@ -6,7 +6,7 @@ export const ME3_LEGACY_VERSION = "0.2" as const;
 export const ME3_FILENAME = "me.json" as const;
 export const ME3_WELL_KNOWN_PATH = "/.well-known/me.json" as const;
 export const ME3_SCHEMA_URL =
-  "https://unpkg.com/me3-protocol@4.0.1/schema.json" as const;
+  "https://raw.githubusercontent.com/soulinkfoundation/me3-protocol/v4.1.0/schema.json" as const;
 export const ME3_LEGACY_SCHEMA_URL =
   "https://unpkg.com/me3-protocol@3.0.0/schema.json" as const;
 
@@ -281,7 +281,7 @@ const FullProfileProperties = {
   banner: Type.Optional(AssetReference),
   location: Type.Optional(Type.String({ minLength: 1, maxLength: 160 })),
   locationData: Type.Optional(Me3LocationDataSchema),
-  links: Type.Optional(Type.Array(Me3LinkSchema, { maxItems: 100 })),
+  links: Type.Optional(Type.Array(Me3LinkSchema, { maxItems: 200 })),
   pages: Type.Optional(Type.Array(Me3PageSchema, { maxItems: 500 })),
   posts: Type.Optional(Type.Array(Me3PostSchema, { maxItems: 5000 })),
   products: Type.Optional(Type.Array(Me3ProductSchema, { maxItems: 500 })),
@@ -306,7 +306,7 @@ const FullProfileProperties = {
 
 export const Me3PublicProfileSchema = Type.Object(
   {
-    $schema: Type.Optional(Type.Literal(ME3_SCHEMA_URL)),
+    $schema: Type.Optional(Type.Union([Type.Literal(ME3_SCHEMA_URL), Type.Literal("https://unpkg.com/me3-protocol@4.0.1/schema.json")])),
     version: Type.Literal(ME3_VERSION),
     kind: ProfileKind,
     visibility: Type.Literal("public"),
@@ -323,7 +323,7 @@ export type Me3PublicProfile = Static<typeof Me3PublicProfileSchema>;
 
 export const Me3PrivateProfileSchema = Type.Object(
   {
-    $schema: Type.Optional(Type.Literal(ME3_SCHEMA_URL)),
+    $schema: Type.Optional(Type.Union([Type.Literal(ME3_SCHEMA_URL), Type.Literal("https://unpkg.com/me3-protocol@4.0.1/schema.json")])),
     version: Type.Literal(ME3_VERSION),
     kind: ProfileKind,
     visibility: Type.Literal("private"),

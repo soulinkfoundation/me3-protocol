@@ -207,3 +207,5 @@ The document protocol version and npm package version are independent:
 - Replace HTTP `method`/`requires` actions with human `link` actions or `openapi` operation references.
 - Remove verification, footer/display controls, draft state, reminders, email templates, and other runtime configuration.
 - Move genuinely public experimental fields into a namespaced `extensions` entry.
+
+Package v4.1.0 permits up to 200 public links so 100 link-in-bio buttons can coexist with social links. The public document version remains 0.3; its schema URL is pinned to the matching Git release.

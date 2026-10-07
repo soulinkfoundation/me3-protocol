@@ -26,8 +26,15 @@ test("exports the 0.3 protocol constants", () => {
   assert.equal(ME3_WELL_KNOWN_PATH, "/.well-known/me.json");
   assert.equal(
     ME3_SCHEMA_URL,
-    "https://unpkg.com/me3-protocol@4.0.1/schema.json",
+    "https://raw.githubusercontent.com/soulinkfoundation/me3-protocol/v4.1.0/schema.json",
   );
+});
+
+test("100 CTA buttons and social links fit in a public manifest", () => {
+  const links = Array.from({ length: 100 }, (_, i) => ({ rel: "cta", label: `Button ${i}`, href: `https://example.com/${i}` }));
+  links.push({ rel: "website", href: "https://example.com" });
+  assert.equal(validateProfile(profile({ links })).valid, true);
+  assert.equal(validateProfile(profile({ links: Array.from({ length: 201 }, () => links[0]) })).valid, false);
 });
 
 test("simple and full examples satisfy runtime validation", async () => {
