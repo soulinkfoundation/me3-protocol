@@ -5,6 +5,7 @@
 - Work directly on `main` unless the user explicitly asks for a branch.
 - Keep `me.json` public, portable, and independent of any one ME3 deployment or provider.
 - Never add secrets, private agent data, account state, or installation configuration to the public protocol.
+- Follow `/Users/kieranbutler/Coding/docs/testing.md` for new tests.
 
 ## Ecosystem Source Of Truth
 
