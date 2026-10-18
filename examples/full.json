@@ -122,7 +122,10 @@
       "title": "Book a session",
       "offeringIds": [
         "discovery-call"
-      ]
+      ],
+      "agentCheckout": {
+        "version": "1"
+      }
     }
   },
   "extensions": {

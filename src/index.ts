@@ -6,7 +6,12 @@ export const ME3_LEGACY_VERSION = "0.2" as const;
 export const ME3_FILENAME = "me.json" as const;
 export const ME3_WELL_KNOWN_PATH = "/.well-known/me.json" as const;
 export const ME3_SCHEMA_URL =
-  "https://raw.githubusercontent.com/soulinkfoundation/me3-protocol/v4.1.0/schema.json" as const;
+  "https://raw.githubusercontent.com/soulinkfoundation/me3-protocol/v4.2.0/schema.json" as const;
+/** Earlier 0.3 schema URLs that published documents may still declare. */
+const PREVIOUS_SCHEMA_URLS = [
+  "https://raw.githubusercontent.com/soulinkfoundation/me3-protocol/v4.1.0/schema.json",
+  "https://unpkg.com/me3-protocol@4.0.1/schema.json",
+] as const;
 export const ME3_LEGACY_SCHEMA_URL =
   "https://unpkg.com/me3-protocol@3.0.0/schema.json" as const;
 
@@ -244,6 +249,24 @@ export const Me3ActionDefinitionSchema = Type.Union([
 ]);
 export type Me3ActionDefinition = Static<typeof Me3ActionDefinitionSchema>;
 
+export const Me3AgentCheckoutSchema = Type.Object(
+  {
+    version: Type.String({
+      pattern: "^[1-9][0-9]{0,3}$",
+      description: "Major version of the agent checkout contract the operation implements.",
+    }),
+    offeringIds: Type.Optional(
+      Type.Array(Id, { maxItems: 100, uniqueItems: true }),
+    ),
+  },
+  {
+    additionalProperties: false,
+    description:
+      "The capability's OpenAPI operation creates checkouts an agent can start and a person pays. offeringIds narrows it to some of the capability's offerings. Discovery does not grant authority to invoke it.",
+  },
+);
+export type Me3AgentCheckout = Static<typeof Me3AgentCheckoutSchema>;
+
 export const Me3CapabilitySchema = Type.Object(
   {
     action: Id,
@@ -252,6 +275,7 @@ export const Me3CapabilitySchema = Type.Object(
     offeringIds: Type.Optional(
       Type.Array(Id, { maxItems: 100, uniqueItems: true }),
     ),
+    agentCheckout: Type.Optional(Me3AgentCheckoutSchema),
   },
   { additionalProperties: false },
 );
@@ -306,7 +330,7 @@ const FullProfileProperties = {
 
 export const Me3PublicProfileSchema = Type.Object(
   {
-    $schema: Type.Optional(Type.Union([Type.Literal(ME3_SCHEMA_URL), Type.Literal("https://unpkg.com/me3-protocol@4.0.1/schema.json")])),
+    $schema: Type.Optional(Type.Union([Type.Literal(ME3_SCHEMA_URL), ...PREVIOUS_SCHEMA_URLS.map((url) => Type.Literal(url))])),
     version: Type.Literal(ME3_VERSION),
     kind: ProfileKind,
     visibility: Type.Literal("public"),
@@ -323,7 +347,7 @@ export type Me3PublicProfile = Static<typeof Me3PublicProfileSchema>;
 
 export const Me3PrivateProfileSchema = Type.Object(
   {
-    $schema: Type.Optional(Type.Union([Type.Literal(ME3_SCHEMA_URL), Type.Literal("https://unpkg.com/me3-protocol@4.0.1/schema.json")])),
+    $schema: Type.Optional(Type.Union([Type.Literal(ME3_SCHEMA_URL), ...PREVIOUS_SCHEMA_URLS.map((url) => Type.Literal(url))])),
     version: Type.Literal(ME3_VERSION),
     kind: ProfileKind,
     visibility: Type.Literal("private"),
@@ -440,6 +464,26 @@ function semanticErrors(profile: Me3CompatibleProfile): ValidationError[] {
         errors.push({
           field: `capabilities.${name}.offeringIds`,
           message: `Unknown offering: ${offeringId}`,
+        });
+      }
+    }
+
+    const agentCheckout = capability.agentCheckout;
+    if (!agentCheckout) continue;
+    if (actions[capability.action] && actions[capability.action].type !== "openapi") {
+      errors.push({
+        field: `capabilities.${name}.agentCheckout`,
+        message: "Agent checkout requires an openapi action",
+      });
+    }
+    const capabilityOfferings = capability.offeringIds
+      ? new Set(capability.offeringIds)
+      : offeringIds;
+    for (const offeringId of agentCheckout.offeringIds || []) {
+      if (!capabilityOfferings.has(offeringId)) {
+        errors.push({
+          field: `capabilities.${name}.agentCheckout.offeringIds`,
+          message: `Offering is not part of this capability: ${offeringId}`,
         });
       }
     }

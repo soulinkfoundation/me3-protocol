@@ -19,6 +19,10 @@
         "$schema": {
           "anyOf": [
             {
+              "const": "https://raw.githubusercontent.com/soulinkfoundation/me3-protocol/v4.2.0/schema.json",
+              "type": "string"
+            },
+            {
               "const": "https://raw.githubusercontent.com/soulinkfoundation/me3-protocol/v4.1.0/schema.json",
               "type": "string"
             },
@@ -665,6 +669,32 @@
                     "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
                     "type": "string"
                   }
+                },
+                "agentCheckout": {
+                  "additionalProperties": false,
+                  "description": "The capability's OpenAPI operation creates checkouts an agent can start and a person pays. offeringIds narrows it to some of the capability's offerings. Discovery does not grant authority to invoke it.",
+                  "type": "object",
+                  "required": [
+                    "version"
+                  ],
+                  "properties": {
+                    "version": {
+                      "pattern": "^[1-9][0-9]{0,3}$",
+                      "description": "Major version of the agent checkout contract the operation implements.",
+                      "type": "string"
+                    },
+                    "offeringIds": {
+                      "maxItems": 100,
+                      "uniqueItems": true,
+                      "type": "array",
+                      "items": {
+                        "minLength": 1,
+                        "maxLength": 120,
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+                        "type": "string"
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -723,6 +753,10 @@
       "properties": {
         "$schema": {
           "anyOf": [
+            {
+              "const": "https://raw.githubusercontent.com/soulinkfoundation/me3-protocol/v4.2.0/schema.json",
+              "type": "string"
+            },
             {
               "const": "https://raw.githubusercontent.com/soulinkfoundation/me3-protocol/v4.1.0/schema.json",
               "type": "string"

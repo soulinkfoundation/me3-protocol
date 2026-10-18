@@ -26,8 +26,19 @@ test("exports the 0.3 protocol constants", () => {
   assert.equal(ME3_WELL_KNOWN_PATH, "/.well-known/me.json");
   assert.equal(
     ME3_SCHEMA_URL,
-    "https://raw.githubusercontent.com/soulinkfoundation/me3-protocol/v4.1.0/schema.json",
+    "https://raw.githubusercontent.com/soulinkfoundation/me3-protocol/v4.2.0/schema.json",
   );
+});
+
+test("documents published against earlier 0.3 schema URLs stay valid", () => {
+  for (const $schema of [
+    ME3_SCHEMA_URL,
+    "https://raw.githubusercontent.com/soulinkfoundation/me3-protocol/v4.1.0/schema.json",
+    "https://unpkg.com/me3-protocol@4.0.1/schema.json",
+  ]) {
+    assert.equal(validateProfile(profile({ $schema })).valid, true, $schema);
+  }
+  assert.equal(validateProfile(profile({ $schema: "https://example.com/schema.json" })).valid, false);
 });
 
 test("100 CTA buttons and social links fit in a public manifest", () => {
@@ -244,6 +255,43 @@ test("actions are human HTTPS links or OpenAPI operation references", () => {
   const unsafe = structuredClone(valid);
   unsafe.actions.contact.url = "http://example.com/contact";
   assert.equal(validateProfile(unsafe).valid, false);
+});
+
+test("agent checkout marks an OpenAPI capability that agents can check out", () => {
+  const seller = (agentCheckout, bookAction = {
+    type: "openapi",
+    spec: "https://seller.example/api/agent-commerce/v1/sites/seller/openapi.json",
+    operationId: "createCheckout",
+  }) => profile({
+    services: [
+      { id: "service:coaching", title: "Coaching" },
+      { id: "service:pay-later", title: "Pay later" },
+    ],
+    actions: {
+      book: bookAction,
+      "book-link": { type: "link", url: "https://seller.example/#booking" },
+    },
+    capabilities: {
+      book: {
+        action: "book",
+        offeringIds: ["service:coaching", "service:pay-later"],
+        agentCheckout,
+      },
+    },
+  });
+
+  assert.equal(validateProfile(seller({ version: "1" })).valid, true);
+  assert.equal(validateProfile(seller({ version: "1", offeringIds: ["service:coaching"] })).valid, true);
+
+  const outside = validateProfile(seller({ version: "1", offeringIds: ["service:other"] }));
+  assert.deepEqual(outside.errors.map((error) => error.field), ["capabilities.book.agentCheckout.offeringIds"]);
+
+  const link = validateProfile(seller({ version: "1" }, { type: "link", url: "https://seller.example/#booking" }));
+  assert.deepEqual(link.errors.map((error) => error.field), ["capabilities.book.agentCheckout"]);
+
+  for (const invalid of [{ version: "v1" }, { version: 1 }, { version: "0" }, {}, { version: "1", holdMinutes: 15 }]) {
+    assert.equal(validateProfile(seller(invalid)).valid, false, JSON.stringify(invalid));
+  }
 });
 
 test("public links and asset references reject executable URI schemes", () => {

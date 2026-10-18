@@ -125,6 +125,32 @@ Actions have only two forms:
 
 `me.json` never grants permission to invoke an operation. Consumers must still apply authentication, authorization, consent, confirmation, and side-effect policies from the action API and their own runtime.
 
+### Agent checkout
+
+A capability whose action is an `openapi` operation can declare `agentCheckout`: the operation creates a checkout an agent can start on someone's behalf and that person then pays. `version` is the major version of the agent checkout contract; `offeringIds` optionally narrows it to some of the capability's offerings (all of them when omitted). Keep a human `link` action beside it for people and older clients.
+
+```json
+{
+  "actions": {
+    "book": {
+      "type": "openapi",
+      "spec": "https://janedoe.example/api/agent-commerce/v1/sites/janedoe/openapi.json",
+      "operationId": "createCheckout"
+    },
+    "book-link": { "type": "link", "url": "https://janedoe.example/#booking" }
+  },
+  "capabilities": {
+    "book": {
+      "action": "book",
+      "offeringIds": ["discovery-call"],
+      "agentCheckout": { "version": "1" }
+    }
+  }
+}
+```
+
+Agent checkout is discovery, not authority: the buyer's own runtime still decides whether to propose, and the person still approves and pays. Prices, availability, and checkout state come from the operation at purchase time, not from `me.json`.
+
 ## Public boundary
 
 Good protocol data includes public identity, public content, public offerings, and public interaction entry points.
@@ -209,3 +235,5 @@ The document protocol version and npm package version are independent:
 - Move genuinely public experimental fields into a namespaced `extensions` entry.
 
 Package v4.1.0 permits up to 200 public links so 100 link-in-bio buttons can coexist with social links. The public document version remains 0.3; its schema URL is pinned to the matching Git release.
+
+Package v4.2.0 adds the optional `agentCheckout` capability field. The document version remains 0.3, and documents that declare the v4.1.0 or v4.0.1 schema URL stay valid.
