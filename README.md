@@ -10,7 +10,7 @@ It is discovery data. It is not authentication, authorization, delegation, priva
 
 ```json
 {
-  "$schema": "https://unpkg.com/me3-protocol@4.0.1/schema.json",
+  "$schema": "https://unpkg.com/me3-protocol@5.0.0/schema.json",
   "version": "0.3",
   "kind": "person",
   "visibility": "public",
@@ -72,7 +72,6 @@ The optional public areas are:
 | `location`, `locationData` | Deliberately approximate public location. |
 | `links` | Explicit HTTPS, email, and telephone links. |
 | `pages`, `posts` | Published content references. |
-| `business` | Compact public positioning context. |
 | `services`, `products` | Public offerings with stable IDs. |
 | `actions` | Human links or operations in a public OpenAPI document. |
 | `capabilities` | Named interactions that reference actions and offerings. |
@@ -96,7 +95,7 @@ Objects are strict: unknown fields are invalid everywhere except inside `extensi
 }
 ```
 
-A private projection cannot contain bio, location, links or contact details, business context, pages, posts, products, services, actions, capabilities, or extensions. The avatar and banner remain public identity presentation. Full private content belongs behind a separate authenticated, audience-bound endpoint. It must never be returned from public `me.json` or stored in a public cache.
+A private projection cannot contain bio, location, links or contact details, pages, posts, products, services, actions, capabilities, or extensions. The avatar and banner remain public identity presentation. Full private content belongs behind a separate authenticated, audience-bound endpoint. It must never be returned from public `me.json` or stored in a public cache.
 
 ## Money
 
@@ -214,6 +213,9 @@ The document protocol version and npm package version are independent:
 - protocol `0.3` adds portable `public`/`private` visibility semantics;
 - npm `4.0.0` marks the required field and current-schema validation boundary.
 - npm `4.0.1` adds `banner` to the safe private identity projection.
+- npm `4.1.0` permits rich bios and up to 200 public links, so 100 link-in-bio buttons can coexist with social links.
+- npm `4.2.0` adds the optional `agentCheckout` capability field, so a capability whose action is an OpenAPI operation can say which offerings an agent can check out.
+- npm `5.0.0` removes `business`. Who someone helps and why is their private Mission, kept by their own agent, so it is no longer part of a public profile. `validateProfile` rejects it; `parseMe3Json` drops it, so profiles published before v5 still parse. The `$schema` URL moves to npm (`me3-protocol@5.0.0`); documents pinned to the 4.x URLs (v4.2.0, v4.1.0, 4.0.1) stay valid.
 
 `parseMe3Json` accepts both legacy `0.2` and current `0.3` documents during migration. `validateProfile` validates only current `0.3` documents, so new publishers cannot omit visibility or invent another value.
 
@@ -234,6 +236,4 @@ The document protocol version and npm package version are independent:
 - Remove verification, footer/display controls, draft state, reminders, email templates, and other runtime configuration.
 - Move genuinely public experimental fields into a namespaced `extensions` entry.
 
-Package v4.1.0 permits up to 200 public links so 100 link-in-bio buttons can coexist with social links. The public document version remains 0.3; its schema URL is pinned to the matching Git release.
-
-Package v4.2.0 adds the optional `agentCheckout` capability field. The document version remains 0.3, and documents that declare the v4.1.0 or v4.0.1 schema URL stay valid.
+The public document version remains 0.3 across these releases.

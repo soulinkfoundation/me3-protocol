@@ -24,15 +24,26 @@ test("exports the 0.3 protocol constants", () => {
   assert.equal(ME3_VERSION, "0.3");
   assert.equal(ME3_LEGACY_VERSION, "0.2");
   assert.equal(ME3_WELL_KNOWN_PATH, "/.well-known/me.json");
-  assert.equal(
-    ME3_SCHEMA_URL,
-    "https://raw.githubusercontent.com/soulinkfoundation/me3-protocol/v4.2.0/schema.json",
-  );
+  assert.equal(ME3_SCHEMA_URL, "https://unpkg.com/me3-protocol@5.0.0/schema.json");
+});
+
+// v5 makes the owner's Mission private. Failure modes: a publisher can still put business positioning in a
+// public profile; a reader rejects every v4 profile that still carries it; a parsed profile hands it back; a
+// document pinned to an earlier schema URL stops validating.
+test("business positioning is not part of a public profile", () => {
+  assert.equal(validateProfile(profile({ business: { positioningStatement: "I help makers ship." } })).valid, false);
+});
+
+test("profiles published before v5 still parse, without their business positioning", () => {
+  const parsed = parseMe3Json(JSON.stringify(profile({ business: { positioningStatement: "I help makers ship.", audience: "makers" } })));
+  assert.equal(parsed.valid, true);
+  assert.equal("business" in parsed.profile, false);
 });
 
 test("documents published against earlier 0.3 schema URLs stay valid", () => {
   for (const $schema of [
     ME3_SCHEMA_URL,
+    "https://raw.githubusercontent.com/soulinkfoundation/me3-protocol/v4.2.0/schema.json",
     "https://raw.githubusercontent.com/soulinkfoundation/me3-protocol/v4.1.0/schema.json",
     "https://unpkg.com/me3-protocol@4.0.1/schema.json",
   ]) {

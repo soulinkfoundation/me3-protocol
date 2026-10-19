@@ -6,9 +6,10 @@ export const ME3_LEGACY_VERSION = "0.2" as const;
 export const ME3_FILENAME = "me.json" as const;
 export const ME3_WELL_KNOWN_PATH = "/.well-known/me.json" as const;
 export const ME3_SCHEMA_URL =
-  "https://raw.githubusercontent.com/soulinkfoundation/me3-protocol/v4.2.0/schema.json" as const;
-/** Earlier 0.3 schema URLs that published documents may still declare. */
-const PREVIOUS_SCHEMA_URLS = [
+  "https://unpkg.com/me3-protocol@5.0.0/schema.json" as const;
+/** Schema URLs written by earlier 0.3 releases; documents pinned to them stay valid. */
+export const ME3_EARLIER_SCHEMA_URLS = [
+  "https://raw.githubusercontent.com/soulinkfoundation/me3-protocol/v4.2.0/schema.json",
   "https://raw.githubusercontent.com/soulinkfoundation/me3-protocol/v4.1.0/schema.json",
   "https://unpkg.com/me3-protocol@4.0.1/schema.json",
 ] as const;
@@ -167,23 +168,6 @@ export const Me3ServiceSchema = Type.Object(
 );
 export type Me3Service = Static<typeof Me3ServiceSchema>;
 
-export const Me3BusinessContextSchema = Type.Object(
-  {
-    positioningStatement: Type.Optional(
-      Type.String({ minLength: 1, maxLength: 320 }),
-    ),
-    audience: Type.Optional(ShortText),
-    primaryProblem: Type.Optional(ShortText),
-    solution: Type.Optional(Type.String({ minLength: 1, maxLength: 240 })),
-    targetMarket: Type.Optional(ShortText),
-    primaryOutcome: Type.Optional(
-      Type.String({ minLength: 1, maxLength: 240 }),
-    ),
-  },
-  { additionalProperties: false },
-);
-export type Me3BusinessContext = Static<typeof Me3BusinessContextSchema>;
-
 export const Me3LocationDataSchema = Type.Object(
   {
     label: Type.String({ minLength: 1, maxLength: 160 }),
@@ -309,7 +293,6 @@ const FullProfileProperties = {
   pages: Type.Optional(Type.Array(Me3PageSchema, { maxItems: 500 })),
   posts: Type.Optional(Type.Array(Me3PostSchema, { maxItems: 5000 })),
   products: Type.Optional(Type.Array(Me3ProductSchema, { maxItems: 500 })),
-  business: Type.Optional(Me3BusinessContextSchema),
   services: Type.Optional(Type.Array(Me3ServiceSchema, { maxItems: 500 })),
   actions: Type.Optional(
     Type.Record(Type.String({ pattern: ID_PATTERN }), Me3ActionDefinitionSchema, {
@@ -330,7 +313,7 @@ const FullProfileProperties = {
 
 export const Me3PublicProfileSchema = Type.Object(
   {
-    $schema: Type.Optional(Type.Union([Type.Literal(ME3_SCHEMA_URL), ...PREVIOUS_SCHEMA_URLS.map((url) => Type.Literal(url))])),
+    $schema: Type.Optional(Type.Union([Type.Literal(ME3_SCHEMA_URL), ...ME3_EARLIER_SCHEMA_URLS.map((url) => Type.Literal(url))])),
     version: Type.Literal(ME3_VERSION),
     kind: ProfileKind,
     visibility: Type.Literal("public"),
@@ -347,7 +330,7 @@ export type Me3PublicProfile = Static<typeof Me3PublicProfileSchema>;
 
 export const Me3PrivateProfileSchema = Type.Object(
   {
-    $schema: Type.Optional(Type.Union([Type.Literal(ME3_SCHEMA_URL), ...PREVIOUS_SCHEMA_URLS.map((url) => Type.Literal(url))])),
+    $schema: Type.Optional(Type.Union([Type.Literal(ME3_SCHEMA_URL), ...ME3_EARLIER_SCHEMA_URLS.map((url) => Type.Literal(url))])),
     version: Type.Literal(ME3_VERSION),
     kind: ProfileKind,
     visibility: Type.Literal("private"),
@@ -508,8 +491,9 @@ export function validateProfile(data: unknown): ValidationResult<Me3Profile> {
 }
 
 export function validateCompatibleProfile(
-  data: unknown,
+  input: unknown,
 ): ValidationResult<Me3CompatibleProfile> {
+  const data = withoutRetiredFields(input);
   const errors = Array.from(
     Value.Errors(Me3CompatibleProfileSchema, data),
     (error) => ({
@@ -525,6 +509,16 @@ export function validateCompatibleProfile(
   if (references.length > 0) return { valid: false, errors: references };
 
   return { valid: true, errors: [], profile };
+}
+
+/**
+ * Profiles published before v5 may carry `business` positioning, which is now private to the owner's agent.
+ * Readers drop it so those profiles still parse; publishers can no longer include it (see validateProfile).
+ */
+function withoutRetiredFields(data: unknown): unknown {
+  if (!data || typeof data !== "object" || Array.isArray(data) || !("business" in data)) return data;
+  const { business: _business, ...rest } = data as Record<string, unknown>;
+  return rest;
 }
 
 export function parseMe3Json(jsonString: string): ValidationResult {

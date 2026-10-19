@@ -1,5 +1,5 @@
 {
-  "$schema": "https://unpkg.com/me3-protocol@4.0.1/schema.json",
+  "$schema": "https://unpkg.com/me3-protocol@5.0.0/schema.json",
   "version": "0.3",
   "kind": "person",
   "visibility": "public",
@@ -22,14 +22,6 @@
   "bio": "A concise public description of this person.",
   "avatar": "./files/avatar.jpg",
   "banner": "./files/banner.jpg",
-  "business": {
-    "positioningStatement": "I help service-based founders shape clearer offers that are easier to buy.",
-    "audience": "service-based founders",
-    "primaryProblem": "unclear offers",
-    "solution": "shaping a clearer offer that is easier to buy",
-    "targetMarket": "service-based founders",
-    "primaryOutcome": "a clearer offer and next step"
-  },
   "links": [
     {
       "rel": "website",
