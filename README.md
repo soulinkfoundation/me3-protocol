@@ -10,7 +10,7 @@ It is discovery data. It is not authentication, authorization, delegation, priva
 
 ```json
 {
-  "$schema": "https://unpkg.com/me3-protocol@5.0.0/schema.json",
+  "$schema": "https://unpkg.com/me3-protocol@5.1.0/schema.json",
   "version": "0.3",
   "kind": "person",
   "visibility": "public",
@@ -69,6 +69,7 @@ The optional public areas are:
 | Area | Purpose |
 | --- | --- |
 | `id`, `url`, `handle`, `bio`, `avatar`, `banner` | Identity and presentation. |
+| `trade` | What the owner does, in a few plain words people search for, such as `Hairdresser`. One line, up to 60 characters, no markup. |
 | `location`, `locationData` | Deliberately approximate public location. |
 | `links` | Explicit HTTPS, email, and telephone links. |
 | `pages`, `posts` | Published content references. |
@@ -216,6 +217,7 @@ The document protocol version and npm package version are independent:
 - npm `4.1.0` permits rich bios and up to 200 public links, so 100 link-in-bio buttons can coexist with social links.
 - npm `4.2.0` adds the optional `agentCheckout` capability field, so a capability whose action is an OpenAPI operation can say which offerings an agent can check out.
 - npm `5.0.0` removes `business`. Who someone helps and why is their private Mission, kept by their own agent, so it is no longer part of a public profile. `validateProfile` rejects it; `parseMe3Json` drops it, so profiles published before v5 still parse. The `$schema` URL moves to npm (`me3-protocol@5.0.0`); documents pinned to the 4.x URLs (v4.2.0, v4.1.0, 4.0.1) stay valid.
+- npm `5.1.0` adds the optional `trade`: what the owner does, in a few plain words, so directories and agents can find a hairdresser who never wrote the word in their bio. Readers on `5.0.0` reject a profile that carries it, so upgrade readers before publishers. Documents pinned to the `5.0.0` URL stay valid.
 
 `parseMe3Json` accepts both legacy `0.2` and current `0.3` documents during migration. `validateProfile` validates only current `0.3` documents, so new publishers cannot omit visibility or invent another value.
 

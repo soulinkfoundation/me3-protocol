@@ -1,5 +1,5 @@
 {
-  "$schema": "https://unpkg.com/me3-protocol@5.0.0/schema.json",
+  "$schema": "https://unpkg.com/me3-protocol@5.1.0/schema.json",
   "version": "0.3",
   "kind": "person",
   "visibility": "public",
@@ -9,6 +9,7 @@
   "handle": "janedoe",
   "location": "Remote",
   "bio": "Independent consultant helping teams explain complex products clearly.",
+  "trade": "Product consultant",
   "links": [
     {
       "rel": "website",

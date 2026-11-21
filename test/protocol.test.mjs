@@ -24,7 +24,30 @@ test("exports the 0.3 protocol constants", () => {
   assert.equal(ME3_VERSION, "0.3");
   assert.equal(ME3_LEGACY_VERSION, "0.2");
   assert.equal(ME3_WELL_KNOWN_PATH, "/.well-known/me.json");
-  assert.equal(ME3_SCHEMA_URL, "https://unpkg.com/me3-protocol@5.0.0/schema.json");
+  assert.equal(ME3_SCHEMA_URL, "https://unpkg.com/me3-protocol@5.1.0/schema.json");
+});
+
+// 5.1 adds `trade`, the one-line public answer to "what do you do?". Failure modes: a publisher can't state it;
+// it turns into a second bio (long text, markup, line breaks); a private projection leaks it; a document
+// pinned to the 5.0.0 schema URL stops validating.
+test("a public profile can say what its owner does in a short trade", () => {
+  assert.equal(validateProfile(profile({ trade: "Hairdresser" })).valid, true);
+  assert.equal(validateProfile(profile({ trade: "Yoga teacher & doula" })).profile.trade, "Yoga teacher & doula");
+  assert.equal(validateProfile(profile()).valid, true);
+});
+
+test("trade stays one short plain line", () => {
+  for (const trade of ["", "x".repeat(61), "Hairdresser\nGalway", "<b>Hairdresser</b>", " Hairdresser", 7]) {
+    assert.equal(validateProfile(profile({ trade })).valid, false, JSON.stringify(trade));
+  }
+});
+
+test("a private projection carries no trade", () => {
+  assert.equal(validateProfile(profile({ visibility: "private", trade: "Hairdresser" })).valid, false);
+});
+
+test("documents pinned to the 5.0.0 schema URL stay valid", () => {
+  assert.equal(validateProfile(profile({ $schema: "https://unpkg.com/me3-protocol@5.0.0/schema.json" })).valid, true);
 });
 
 // v5 makes the owner's Mission private. Failure modes: a publisher can still put business positioning in a

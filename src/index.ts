@@ -6,9 +6,10 @@ export const ME3_LEGACY_VERSION = "0.2" as const;
 export const ME3_FILENAME = "me.json" as const;
 export const ME3_WELL_KNOWN_PATH = "/.well-known/me.json" as const;
 export const ME3_SCHEMA_URL =
-  "https://unpkg.com/me3-protocol@5.0.0/schema.json" as const;
+  "https://unpkg.com/me3-protocol@5.1.0/schema.json" as const;
 /** Schema URLs written by earlier 0.3 releases; documents pinned to them stay valid. */
 export const ME3_EARLIER_SCHEMA_URLS = [
+  "https://unpkg.com/me3-protocol@5.0.0/schema.json",
   "https://raw.githubusercontent.com/soulinkfoundation/me3-protocol/v4.2.0/schema.json",
   "https://raw.githubusercontent.com/soulinkfoundation/me3-protocol/v4.1.0/schema.json",
   "https://unpkg.com/me3-protocol@4.0.1/schema.json",
@@ -24,6 +25,8 @@ const ASSET_REFERENCE_PATTERN = "^(https://|\\./|/)";
 const MONEY_PATTERN = "^(0|[1-9][0-9]*)(\\.[0-9]+)?$";
 const CURRENCY_PATTERN = "^[A-Z]{3}$";
 const COUNTRY_CODE_PATTERN = "^[A-Z]{2}$";
+// One plain line: no markup, line breaks or surrounding spaces.
+const TRADE_PATTERN = "^[^\\s<>](?:[^<>\\n\\r\\t]*[^\\s<>])?$";
 const EXTENSION_KEY_PATTERN =
   "^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?/[A-Za-z0-9][A-Za-z0-9._-]*$";
 
@@ -285,6 +288,15 @@ const FullProfileProperties = {
   url: Type.Optional(HttpsUri),
   handle: ProfileHandle,
   bio: Type.Optional(Type.String({ minLength: 1, maxLength: 16384 })),
+  trade: Type.Optional(
+    Type.String({
+      minLength: 1,
+      maxLength: 60,
+      pattern: TRADE_PATTERN,
+      description:
+        "What the owner does, in a few plain words a person would search for, such as \"Hairdresser\" or \"Yoga teacher\".",
+    }),
+  ),
   avatar: Type.Optional(AssetReference),
   banner: Type.Optional(AssetReference),
   location: Type.Optional(Type.String({ minLength: 1, maxLength: 160 })),
